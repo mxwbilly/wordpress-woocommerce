@@ -1,0 +1,152 @@
+{
+  "generatedAt": "2026-05-15T04:00:01.875Z",
+  "window": "last 12 months",
+  "countries": [
+    "VN",
+    "TH",
+    "ID",
+    "MY",
+    "SG",
+    "PH"
+  ],
+  "products": {
+    "bamboo_fiber_planter": {
+      "keyword": "bamboo fiber planter",
+      "byCountry": {
+        "VN": {
+          "error": "read ECONNRESET"
+        },
+        "TH": {
+          "error": "read ECONNRESET"
+        },
+        "ID": {
+          "error": "read ECONNRESET"
+        },
+        "MY": {
+          "error": "Client network socket disconnected before secure TLS connection was established"
+        },
+        "SG": {
+          "error": "Client network socket disconnected before secure TLS connection was established"
+        },
+        "PH": {
+          "error": "read ECONNRESET"
+        }
+      }
+    },
+    "self_watering_planter": {
+      "keyword": "self watering planter",
+      "byCountry": {
+        "VN": {
+          "error": "read ECONNRESET"
+        },
+        "TH": {
+          "error": "read ECONNRESET"
+        },
+        "ID": {
+          "error": "Client network socket disconnected before secure TLS connection was established"
+        },
+        "MY": {
+          "error": "read ECONNRESET"
+        },
+        "SG": {
+          "error": "read ECONNRESET"
+        },
+        "PH": {
+          "error": "read ECONNRESET"
+        }
+      }
+    },
+    "nursery_tray": {
+      "keyword": "nursery tray",
+      "byCountry": {
+        "VN": {
+          "error": "read ECONNRESET"
+        },
+        "TH": {
+          "error": "read ECONNRESET"
+        },
+        "ID": {
+          "error": "read ECONNRESET"
+        },
+        "MY": {
+          "error": "read ECONNRESET"
+        },
+        "SG": {
+          "error": "read ECONNRESET"
+        },
+        "PH": {
+          "error": "read ECONNRESET"
+        }
+      }
+    },
+    "terracotta_pot": {
+      "keyword": "terracotta pot",
+      "byCountry": {
+        "VN": {
+          "error": "read ECONNRESET"
+        },
+        "TH": {
+          "error": "read ECONNRESET"
+        },
+        "ID": {
+          "error": "read ECONNRESET"
+        },
+        "MY": {
+          "error": "Client network socket disconnected before secure TLS connection was established"
+        },
+        "SG": {
+          "error": "read ECONNRESET"
+        },
+        "PH": {
+          "error": "read ECONNRESET"
+        }
+      }
+    },
+    "balcony_planter_box": {
+      "keyword": "balcony planter box",
+      "byCountry": {
+        "VN": {
+          "error": "read ECONNRESET"
+        },
+        "TH": {
+          "error": "read ECONNRESET"
+        },
+        "ID": {
+          "error": "Client network socket disconnected before secure TLS connection was established"
+        },
+        "MY": {
+          "error": "Client network socket disconnected before secure TLS connection was established"
+        },
+        "SG": {
+          "error": "Client network socket disconnected before secure TLS connection was established"
+        },
+        "PH": {
+          "error": "read ECONNRESET"
+        }
+      }
+    },
+    "hanging_basket": {
+      "keyword": "hanging basket",
+      "byCountry": {
+        "VN": {
+          "error": "read ECONNRESET"
+        },
+        "TH": {
+          "error": "read ECONNRESET"
+        },
+        "ID": {
+          "error": "read ECONNRESET"
+        },
+        "MY": {
+          "error": "read ECONNRESET"
+        },
+        "SG": {
+          "error": "read ECONNRESET"
+        },
+        "PH": {
+          "error": "read ECONNRESET"
+        }
+      }
+    }
+  }
+}
