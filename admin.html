@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GreenSmart Admin</title>
+    <title>GreenSmart 后台管理</title>
     <style>
         :root {
             color-scheme: light;
@@ -190,74 +190,74 @@
 <body>
     <div class="wrap">
         <section class="card" id="loginCard">
-            <h1>GreenSmart Admin Login</h1>
-            <p class="muted">Default admin comes from your server `.env` values.</p>
+            <h1>GreenSmart 后台登录</h1>
+            <p class="muted">默认管理员账号来自服务器 `.env` 配置。</p>
             <form id="loginForm">
-                <input type="email" id="email" name="email" placeholder="admin@novagardenhome.com" required>
-                <input type="password" id="password" name="password" placeholder="Password" required>
-                <button type="submit" id="loginBtn">Sign in</button>
+                <input type="email" id="email" name="email" placeholder="请输入管理员邮箱" required>
+                <input type="password" id="password" name="password" placeholder="请输入密码" required>
+                <button type="submit" id="loginBtn">登录</button>
             </form>
             <p id="loginFeedback" class="muted"></p>
         </section>
 
         <section class="card hidden" id="dashboardCard">
-            <h1>Inquiry Dashboard</h1>
-            <p class="muted">Day 4: filters, status flow, and detail notes.</p>
+            <h1>询盘管理看板</h1>
+            <p class="muted">统一查看询盘筛选、跟进状态、负责人、报价与备注。</p>
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <div class="kpi-label">Total</div>
+                    <div class="kpi-label">询盘总数</div>
                     <div class="kpi-value" id="kpiTotal">0</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Recent 7d</div>
+                    <div class="kpi-label">近7天新增</div>
                     <div class="kpi-value" id="kpi7d">0</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Quoted</div>
+                    <div class="kpi-label">已报价</div>
                     <div class="kpi-value" id="kpiQuoted">0</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Won</div>
+                    <div class="kpi-label">已成交</div>
                     <div class="kpi-value" id="kpiWon">0</div>
                 </div>
             </div>
             <div class="toolbar">
                 <select id="statusFilter">
-                    <option value="">All Status</option>
-                    <option value="new">new</option>
-                    <option value="contacted">contacted</option>
-                    <option value="quoted">quoted</option>
-                    <option value="won">won</option>
-                    <option value="lost">lost</option>
+                    <option value="">全部状态</option>
+                    <option value="new">新建</option>
+                    <option value="contacted">已联系</option>
+                    <option value="quoted">已报价</option>
+                    <option value="won">已成交</option>
+                    <option value="lost">已流失</option>
                 </select>
-                <input id="countryFilter" type="text" placeholder="Filter by country">
-                <input id="productFilter" type="text" placeholder="Filter by product">
-                <input id="keywordFilter" type="text" placeholder="Search name/email/message">
-                <button id="applyFilterBtn" type="button" class="btn-outline">Apply</button>
-                <button id="clearFilterBtn" type="button" class="btn-outline">Clear</button>
+                <input id="countryFilter" type="text" placeholder="按国家筛选（如：越南）">
+                <input id="productFilter" type="text" placeholder="按产品筛选（如：竹纤维花盆）">
+                <input id="keywordFilter" type="text" placeholder="搜索姓名/邮箱/需求内容">
+                <button id="applyFilterBtn" type="button" class="btn-outline">应用筛选</button>
+                <button id="clearFilterBtn" type="button" class="btn-outline">清空筛选</button>
             </div>
             <div class="toolbar">
-                <button id="refreshBtn" type="button">Refresh</button>
-                <button id="exportCsvBtn" type="button" class="btn-outline">Export CSV</button>
-                <button id="logoutBtn" type="button" class="btn-muted">Logout</button>
-                <span class="muted" id="summaryText">0 records</span>
+                <button id="refreshBtn" type="button">刷新数据</button>
+                <button id="exportCsvBtn" type="button" class="btn-outline">导出 CSV</button>
+                <button id="logoutBtn" type="button" class="btn-muted">退出登录</button>
+                <span class="muted" id="summaryText">0 条记录</span>
             </div>
             <div class="toolbar">
-                <button id="prevPageBtn" type="button" class="btn-outline">Prev</button>
-                <span class="muted" id="pageInfo">Page 1 / 1</span>
-                <button id="nextPageBtn" type="button" class="btn-outline">Next</button>
+                <button id="prevPageBtn" type="button" class="btn-outline">上一页</button>
+                <span class="muted" id="pageInfo">第 1 页 / 共 1 页</span>
+                <button id="nextPageBtn" type="button" class="btn-outline">下一页</button>
             </div>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
-                            <th>Created</th>
-                            <th>Status</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Country</th>
-                            <th>Product</th>
-                            <th>Actions</th>
+                            <th>创建时间</th>
+                            <th>状态</th>
+                            <th>姓名</th>
+                            <th>邮箱</th>
+                            <th>国家</th>
+                            <th>产品</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="inquiryRows"></tbody>
@@ -265,54 +265,54 @@
             </div>
             <div id="detailsPanel" class="details-grid hidden" style="margin-top:16px;">
                 <div class="detail-box">
-                    <h3 style="margin-top:0;">Inquiry Detail</h3>
-                    <p class="muted" id="detailMeta">Select a row to inspect details.</p>
+                    <h3 style="margin-top:0;">询盘详情</h3>
+                    <p class="muted" id="detailMeta">点击列表中的“详情”查看具体内容。</p>
                     <p id="detailMessage" style="white-space:pre-wrap;"></p>
-                    <label for="detailStatusSelect">Update status</label>
+                    <label for="detailStatusSelect">更新状态</label>
                     <select id="detailStatusSelect">
-                        <option value="new">new</option>
-                        <option value="contacted">contacted</option>
-                        <option value="quoted">quoted</option>
-                        <option value="won">won</option>
-                        <option value="lost">lost</option>
+                        <option value="new">新建</option>
+                        <option value="contacted">已联系</option>
+                        <option value="quoted">已报价</option>
+                        <option value="won">已成交</option>
+                        <option value="lost">已流失</option>
                     </select>
-                    <label for="detailAssigneeSelect" style="display:block;margin-top:12px;">Assign owner</label>
+                    <label for="detailAssigneeSelect" style="display:block;margin-top:12px;">分配负责人</label>
                     <select id="detailAssigneeSelect">
-                        <option value="">Unassigned</option>
+                        <option value="">未分配</option>
                     </select>
-                    <button id="saveStatusBtn" type="button" class="btn-compact" style="margin-top:10px;">Save status / assignee</button>
-                    <label for="detailNoteInput" style="display:block;margin-top:12px;">Add follow-up note</label>
-                    <textarea id="detailNoteInput" placeholder="Write call summary, quotation updates, next steps..."></textarea>
-                    <button id="addNoteBtn" type="button" class="btn-compact" style="margin-top:10px;">Add note</button>
+                    <button id="saveStatusBtn" type="button" class="btn-compact" style="margin-top:10px;">保存状态/负责人</button>
+                    <label for="detailNoteInput" style="display:block;margin-top:12px;">新增跟进备注</label>
+                    <textarea id="detailNoteInput" placeholder="填写电话沟通结论、报价进展、下一步计划..."></textarea>
+                    <button id="addNoteBtn" type="button" class="btn-compact" style="margin-top:10px;">添加备注</button>
                 </div>
                 <div class="detail-box">
-                    <h3 style="margin-top:0;">Quotes</h3>
+                    <h3 style="margin-top:0;">报价记录</h3>
                     <div class="toolbar">
-                        <input id="quotePriceInput" type="number" min="0" step="0.01" placeholder="Unit price">
-                        <input id="quoteCurrencyInput" type="text" value="USD" maxlength="3" placeholder="Currency">
-                        <input id="quoteMoqInput" type="text" placeholder="MOQ (optional)">
+                        <input id="quotePriceInput" type="number" min="0" step="0.01" placeholder="单价">
+                        <input id="quoteCurrencyInput" type="text" value="USD" maxlength="3" placeholder="币种">
+                        <input id="quoteMoqInput" type="text" placeholder="MOQ（可选）">
                     </div>
                     <div class="toolbar">
-                        <input id="quoteIncotermInput" type="text" placeholder="Incoterm (EXW/FOB/CIF)">
-                        <input id="quoteValidityInput" type="number" min="1" max="180" value="30" placeholder="Validity days">
-                        <button id="createQuoteBtn" type="button" class="btn-compact">Create quote</button>
+                        <input id="quoteIncotermInput" type="text" placeholder="贸易条款（EXW/FOB/CIF）">
+                        <input id="quoteValidityInput" type="number" min="1" max="180" value="30" placeholder="有效期（天）">
+                        <button id="createQuoteBtn" type="button" class="btn-compact">创建报价</button>
                     </div>
-                    <textarea id="quoteNoteInput" placeholder="Quote notes (packaging, lead time, exclusions)..."></textarea>
+                    <textarea id="quoteNoteInput" placeholder="报价说明（包装、交期、报价范围等）..."></textarea>
                     <ul id="quoteList" class="quote-list" style="margin-top:10px;"></ul>
                 </div>
                 <div class="detail-box">
-                    <h3 style="margin-top:0;">Timeline</h3>
+                    <h3 style="margin-top:0;">跟进时间线</h3>
                     <ul id="timelineList" class="timeline-list"></ul>
                 </div>
             </div>
             <div class="detail-box" style="margin-top:16px;">
-                <h3 style="margin-top:0;">System Settings (Admin)</h3>
+                <h3 style="margin-top:0;">系统设置（仅管理员）</h3>
                 <div class="toolbar">
-                    <input id="notifyEmailInput" type="email" placeholder="Notification email">
+                    <input id="notifyEmailInput" type="email" placeholder="通知邮箱">
                     <select id="defaultAssigneeInput">
-                        <option value="">Default assignee (none)</option>
+                        <option value="">默认负责人（不设置）</option>
                     </select>
-                    <button id="saveSettingsBtn" type="button" class="btn-compact">Save settings</button>
+                    <button id="saveSettingsBtn" type="button" class="btn-compact">保存设置</button>
                 </div>
             </div>
         </section>

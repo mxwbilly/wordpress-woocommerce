@@ -51,6 +51,24 @@ let totalItems = 0;
 let users = [];
 let currentUser = null;
 
+const statusLabelMap = {
+    new: '新建',
+    contacted: '已联系',
+    quoted: '已报价',
+    won: '已成交',
+    lost: '已流失'
+};
+
+const productLabelMap = {
+    bamboo: '竹纤维花盆',
+    'self-watering': '自动浇水陶瓷花盆',
+    nursery: '可堆叠育苗盘套装',
+    terracotta: '透气红陶花盆',
+    balcony: '阳台菜园花箱',
+    coir: '悬挂椰棕花篮',
+    other: '其他/定制需求'
+};
+
 function setAuthState(loggedIn) {
     loginCard.classList.toggle('hidden', loggedIn);
     dashboardCard.classList.toggle('hidden', !loggedIn);
@@ -78,9 +96,18 @@ function escapeHtml(value) {
 }
 
 function getUserName(userId) {
-    if (!userId) return 'Unassigned';
+    if (!userId) return '未分配';
     const user = users.find((item) => item.id === userId);
     return user ? user.name || user.email : userId;
+}
+
+function getStatusLabel(status) {
+    return statusLabelMap[status] || status || '-';
+}
+
+function getProductLabel(product) {
+    if (!product) return '-';
+    return productLabelMap[product] || product;
 }
 
 async function apiFetch(url, options = {}) {
@@ -102,37 +129,37 @@ async function apiFetch(url, options = {}) {
 
 function updatePageControls() {
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-    pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+    pageInfo.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
     prevPageBtn.disabled = currentPage <= 1;
     nextPageBtn.disabled = currentPage >= totalPages;
 }
 
 function renderRows(items) {
     if (!Array.isArray(items) || items.length === 0) {
-        inquiryRows.innerHTML = '<tr><td colspan="7">No inquiries yet.</td></tr>';
-        summaryText.textContent = `0 records (total ${totalItems})`;
+        inquiryRows.innerHTML = '<tr><td colspan="7">暂无询盘记录</td></tr>';
+        summaryText.textContent = `当前 0 条（总计 ${totalItems} 条）`;
         return;
     }
-    summaryText.textContent = `${items.length} records on this page (total ${totalItems})`;
+    summaryText.textContent = `本页 ${items.length} 条（总计 ${totalItems} 条）`;
     inquiryRows.innerHTML = items.map((item) => `
         <tr>
             <td>${new Date(item.createdAt).toLocaleString()}</td>
-            <td><span class="status-pill">${item.status}</span></td>
+            <td><span class="status-pill">${getStatusLabel(item.status)}</span></td>
             <td>${escapeHtml(item.contact?.name || '')}</td>
             <td>${escapeHtml(item.contact?.email || '')}</td>
             <td>${escapeHtml(item.contact?.country || '')}</td>
-            <td>${escapeHtml(item.product || '-')}</td>
+            <td>${escapeHtml(getProductLabel(item.product))}</td>
             <td>
                 <div class="row-actions">
                     <select data-role="row-status" data-id="${item.id}">
-                        <option value="new" ${item.status === 'new' ? 'selected' : ''}>new</option>
-                        <option value="contacted" ${item.status === 'contacted' ? 'selected' : ''}>contacted</option>
-                        <option value="quoted" ${item.status === 'quoted' ? 'selected' : ''}>quoted</option>
-                        <option value="won" ${item.status === 'won' ? 'selected' : ''}>won</option>
-                        <option value="lost" ${item.status === 'lost' ? 'selected' : ''}>lost</option>
+                        <option value="new" ${item.status === 'new' ? 'selected' : ''}>新建</option>
+                        <option value="contacted" ${item.status === 'contacted' ? 'selected' : ''}>已联系</option>
+                        <option value="quoted" ${item.status === 'quoted' ? 'selected' : ''}>已报价</option>
+                        <option value="won" ${item.status === 'won' ? 'selected' : ''}>已成交</option>
+                        <option value="lost" ${item.status === 'lost' ? 'selected' : ''}>已流失</option>
                     </select>
-                    <button type="button" class="btn-compact" data-role="save-row-status" data-id="${item.id}">Save</button>
-                    <button type="button" class="btn-compact btn-outline" data-role="open-detail" data-id="${item.id}">Details</button>
+                    <button type="button" class="btn-compact" data-role="save-row-status" data-id="${item.id}">保存</button>
+                    <button type="button" class="btn-compact btn-outline" data-role="open-detail" data-id="${item.id}">详情</button>
                 </div>
             </td>
         </tr>
@@ -142,7 +169,7 @@ function renderRows(items) {
 function renderTimeline(item) {
     const timeline = Array.isArray(item.timeline) ? item.timeline : [];
     if (timeline.length === 0) {
-        timelineList.innerHTML = '<li>No timeline yet.</li>';
+        timelineList.innerHTML = '<li>暂无跟进记录</li>';
         return;
     }
     const sorted = [...timeline].sort((a, b) => new Date(b.at) - new Date(a.at));
@@ -156,12 +183,12 @@ function renderTimeline(item) {
 }
 
 function fillAssigneeOptions() {
-    const options = ['<option value="">Unassigned</option>'];
+    const options = ['<option value="">未分配</option>'];
     users.forEach((user) => {
         options.push(`<option value="${escapeHtml(user.id)}">${escapeHtml(user.name || user.email)}</option>`);
     });
     detailAssigneeSelect.innerHTML = options.join('');
-    defaultAssigneeInput.innerHTML = ['<option value="">Default assignee (none)</option>', ...options.slice(1)].join('');
+    defaultAssigneeInput.innerHTML = ['<option value="">默认负责人（不设置）</option>', ...options.slice(1)].join('');
 }
 
 function setSelectedInquiry(item) {
@@ -172,7 +199,7 @@ function setSelectedInquiry(item) {
     }
     selectedInquiryId = item.id;
     detailsPanel.classList.remove('hidden');
-    detailMeta.textContent = `#${item.id} · ${item.contact?.name || '-'} · ${item.contact?.email || '-'} · ${item.contact?.country || '-'} · Owner: ${getUserName(item.assigneeId)}`;
+    detailMeta.textContent = `#${item.id} · ${item.contact?.name || '-'} · ${item.contact?.email || '-'} · ${item.contact?.country || '-'} · 负责人：${getUserName(item.assigneeId)}`;
     detailMessage.textContent = item.message || '';
     detailStatusSelect.value = item.status || 'new';
     detailAssigneeSelect.value = item.assigneeId || '';
@@ -205,7 +232,7 @@ async function loadUsers() {
 
 function renderQuotes(quotes) {
     if (!Array.isArray(quotes) || quotes.length === 0) {
-        quoteList.innerHTML = '<li>No quotes yet.</li>';
+        quoteList.innerHTML = '<li>暂无报价记录</li>';
         return;
     }
     const sorted = [...quotes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -213,7 +240,7 @@ function renderQuotes(quotes) {
         <li>
             <strong>${escapeHtml(quote.quoteNo)}</strong>
             <div>${escapeHtml(quote.currency)} ${escapeHtml(quote.unitPrice)} · MOQ ${escapeHtml(quote.moq || '-')} · ${escapeHtml(quote.incoterm || '-')}</div>
-            <div>Validity: ${escapeHtml(quote.validityDays)} day(s) · ${new Date(quote.createdAt).toLocaleString()}</div>
+            <div>有效期：${escapeHtml(quote.validityDays)} 天 · ${new Date(quote.createdAt).toLocaleString()}</div>
             <div>${escapeHtml(quote.note || '')}</div>
         </li>
     `).join('');
@@ -269,7 +296,7 @@ async function loadInquiries() {
         await loadDashboardSummary();
     } catch (error) {
         inquiryRows.innerHTML = `<tr><td colspan="7">${error.message}</td></tr>`;
-        summaryText.textContent = 'Load failed';
+        summaryText.textContent = '加载失败';
     }
 }
 
@@ -305,7 +332,7 @@ async function exportCsv() {
 
 async function createQuote() {
     if (!selectedInquiryId) {
-        alert('Please select an inquiry first.');
+        alert('请先选择一条询盘。');
         return;
     }
     const payload = {
@@ -327,7 +354,7 @@ loginForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const submitBtn = document.getElementById('loginBtn');
     submitBtn.disabled = true;
-    loginFeedback.textContent = 'Signing in...';
+    loginFeedback.textContent = '登录中...';
     try {
         const formData = new FormData(loginForm);
         const payload = Object.fromEntries(formData.entries());
@@ -447,7 +474,7 @@ addNoteBtn?.addEventListener('click', async () => {
     if (!selectedInquiryId) return;
     const note = detailNoteInput.value.trim();
     if (!note) {
-        alert('Please enter a note first.');
+        alert('请先输入备注内容。');
         return;
     }
     addNoteBtn.disabled = true;
@@ -473,7 +500,7 @@ createQuoteBtn?.addEventListener('click', async () => {
 
 saveSettingsBtn?.addEventListener('click', async () => {
     if (!currentUser || currentUser.role !== 'admin') {
-        alert('Only admin can update settings.');
+        alert('仅管理员可以修改系统设置。');
         return;
     }
     saveSettingsBtn.disabled = true;
