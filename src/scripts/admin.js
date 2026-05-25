@@ -1,5 +1,6 @@
 const tokenKey = 'greensmart-admin-token';
 const pageSize = 20;
+const adminApiBase = '/api/admin';
 
 const loginCard = document.getElementById('loginCard');
 const dashboardCard = document.getElementById('dashboardCard');
@@ -225,7 +226,7 @@ function buildQueryFromFilters() {
 }
 
 async function loadUsers() {
-    const result = await apiFetch('/api/users');
+    const result = await apiFetch(`${adminApiBase}/users`);
     users = result.items || [];
     fillAssigneeOptions();
 }
@@ -255,7 +256,7 @@ function updateKpis(summary) {
 }
 
 async function loadDashboardSummary() {
-    const result = await apiFetch('/api/dashboard/summary');
+    const result = await apiFetch(`${adminApiBase}/dashboard/summary`);
     updateKpis(result.item || {});
 }
 
@@ -271,7 +272,7 @@ async function loadSettings() {
     notifyEmailInput.disabled = false;
     defaultAssigneeInput.disabled = false;
     saveSettingsBtn.disabled = false;
-    const result = await apiFetch('/api/settings');
+    const result = await apiFetch(`${adminApiBase}/settings`);
     notifyEmailInput.value = result.item?.notifyEmail || '';
     defaultAssigneeInput.value = result.item?.defaultAssigneeId || '';
 }
@@ -279,7 +280,7 @@ async function loadSettings() {
 async function loadInquiries() {
     try {
         const query = buildQueryFromFilters();
-        const result = await apiFetch(`/api/inquiries?${query.toString()}`);
+        const result = await apiFetch(`${adminApiBase}/inquiries?${query.toString()}`);
         inquiryItems = result.items || [];
         totalItems = Number(result.total || 0);
         renderRows(inquiryItems);
@@ -289,7 +290,7 @@ async function loadInquiries() {
             if (selected) {
                 setSelectedInquiry(selected);
             } else {
-                const detailResult = await apiFetch(`/api/inquiries/${encodeURIComponent(selectedInquiryId)}`);
+                const detailResult = await apiFetch(`${adminApiBase}/inquiries/${encodeURIComponent(selectedInquiryId)}`);
                 setSelectedInquiry(detailResult.item);
             }
         }
@@ -301,7 +302,7 @@ async function loadInquiries() {
 }
 
 async function patchInquiry(inquiryId, payload) {
-    await apiFetch(`/api/inquiries/${encodeURIComponent(inquiryId)}`, {
+    await apiFetch(`${adminApiBase}/inquiries/${encodeURIComponent(inquiryId)}`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
     });
@@ -313,7 +314,7 @@ async function exportCsv() {
     const query = buildQueryFromFilters();
     query.delete('page');
     query.delete('pageSize');
-    const response = await fetch(`/api/inquiries/export.csv?${query.toString()}`, {
+    const response = await fetch(`${adminApiBase}/inquiries/export.csv?${query.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
     });
     if (!response.ok) {
@@ -343,7 +344,7 @@ async function createQuote() {
         validityDays: Number(quoteValidityInput.value || 30),
         note: quoteNoteInput.value.trim()
     };
-    await apiFetch(`/api/inquiries/${encodeURIComponent(selectedInquiryId)}/quotes`, {
+    await apiFetch(`${adminApiBase}/inquiries/${encodeURIComponent(selectedInquiryId)}/quotes`, {
         method: 'POST',
         body: JSON.stringify(payload)
     });
@@ -358,7 +359,7 @@ loginForm?.addEventListener('submit', async (event) => {
     try {
         const formData = new FormData(loginForm);
         const payload = Object.fromEntries(formData.entries());
-        const result = await apiFetch('/api/auth/login', {
+        const result = await apiFetch(`${adminApiBase}/auth/login`, {
             method: 'POST',
             body: JSON.stringify(payload)
         });
@@ -436,7 +437,7 @@ inquiryRows?.addEventListener('click', async (event) => {
     if (!role || !inquiryId) return;
 
     if (role === 'open-detail') {
-        const detailResult = await apiFetch(`/api/inquiries/${encodeURIComponent(inquiryId)}`);
+        const detailResult = await apiFetch(`${adminApiBase}/inquiries/${encodeURIComponent(inquiryId)}`);
         setSelectedInquiry(detailResult.item);
         return;
     }
@@ -505,7 +506,7 @@ saveSettingsBtn?.addEventListener('click', async () => {
     }
     saveSettingsBtn.disabled = true;
     try {
-        await apiFetch('/api/settings', {
+        await apiFetch(`${adminApiBase}/settings`, {
             method: 'PATCH',
             body: JSON.stringify({
                 notifyEmail: notifyEmailInput.value.trim(),
@@ -528,7 +529,7 @@ async function boot() {
         return;
     }
     try {
-        const me = await apiFetch('/api/auth/me');
+        const me = await apiFetch(`${adminApiBase}/auth/me`);
         currentUser = me.user || null;
         setAuthState(true);
         await loadUsers();

@@ -213,7 +213,7 @@ function createApp() {
     res.json({ ok: true, service: 'greensmart-api', time: nowIso() });
   });
 
-  app.post('/api/auth/login', createRateLimiter(loginRateState, {
+  app.post('/api/admin/auth/login', createRateLimiter(loginRateState, {
     windowMs: 15 * 60 * 1000,
     limit: 12,
     label: 'login'
@@ -268,7 +268,7 @@ function createApp() {
     };
   }
 
-  app.get('/api/auth/me', requireAuth, (req, res) => {
+  app.get('/api/admin/auth/me', requireAuth, (req, res) => {
     res.json({
       ok: true,
       user: {
@@ -280,7 +280,7 @@ function createApp() {
     });
   });
 
-  app.get('/api/settings', requireAuth, requireRole('admin'), async (req, res) => {
+  app.get('/api/admin/settings', requireAuth, requireRole('admin'), async (req, res) => {
     try {
       const settings = await readJson(DATA_FILES.settings);
       return res.json({ ok: true, item: settings });
@@ -289,7 +289,7 @@ function createApp() {
     }
   });
 
-  app.patch('/api/settings', requireAuth, requireRole('admin'), async (req, res) => {
+  app.patch('/api/admin/settings', requireAuth, requireRole('admin'), async (req, res) => {
     try {
       const body = req.body || {};
       const settings = await readJson(DATA_FILES.settings);
@@ -328,7 +328,7 @@ function createApp() {
     }
   });
 
-  app.get('/api/users', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
+  app.get('/api/admin/users', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
     try {
       const users = await readJson(DATA_FILES.users);
       const items = users.map((user) => ({
@@ -481,7 +481,7 @@ function createApp() {
     }
   });
 
-  app.get('/api/dashboard/summary', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
+  app.get('/api/admin/dashboard/summary', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
     try {
       const inquiries = await readJson(DATA_FILES.inquiries);
       const now = Date.now();
@@ -524,7 +524,7 @@ function createApp() {
     }
   });
 
-  app.get('/api/inquiries', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
+  app.get('/api/admin/inquiries', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
     try {
       const page = Math.max(1, Number.parseInt(String(req.query.page || '1'), 10) || 1);
       const pageSize = Math.min(100, Math.max(1, Number.parseInt(String(req.query.pageSize || '20'), 10) || 20));
@@ -540,7 +540,7 @@ function createApp() {
     }
   });
 
-  app.get('/api/inquiries/export.csv', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
+  app.get('/api/admin/inquiries/export.csv', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
     try {
       const inquiries = await readJson(DATA_FILES.inquiries);
       const sorted = inquiries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -580,7 +580,7 @@ function createApp() {
     }
   });
 
-  app.get('/api/inquiries/:inquiryId', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
+  app.get('/api/admin/inquiries/:inquiryId', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
     try {
       const inquiryId = req.params.inquiryId;
       const inquiries = await readJson(DATA_FILES.inquiries);
@@ -594,7 +594,7 @@ function createApp() {
     }
   });
 
-  app.get('/api/inquiries/:inquiryId/quotes', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
+  app.get('/api/admin/inquiries/:inquiryId/quotes', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
     try {
       const inquiryId = req.params.inquiryId;
       const inquiries = await readJson(DATA_FILES.inquiries);
@@ -608,7 +608,7 @@ function createApp() {
     }
   });
 
-  app.post('/api/inquiries/:inquiryId/quotes', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
+  app.post('/api/admin/inquiries/:inquiryId/quotes', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
     try {
       const inquiryId = req.params.inquiryId;
       const body = req.body || {};
@@ -667,7 +667,7 @@ function createApp() {
     }
   });
 
-  app.patch('/api/inquiries/:inquiryId', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
+  app.patch('/api/admin/inquiries/:inquiryId', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
     try {
       const inquiryId = req.params.inquiryId;
       const body = req.body || {};
