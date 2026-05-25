@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenSmart Admin</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        body {
+            margin: 0;
+            background: #f4f6f8;
+            color: #0f172a;
+        }
+        .wrap {
+            max-width: 1040px;
+            margin: 36px auto;
+            padding: 0 16px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            margin-bottom: 18px;
+        }
+        h1 {
+            margin: 0 0 10px;
+            font-size: 1.5rem;
+        }
+        .muted {
+            color: #64748b;
+            margin: 0 0 16px;
+        }
+        form {
+            display: grid;
+            gap: 10px;
+            max-width: 420px;
+        }
+        input, button, select {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+        }
+        button {
+            border: none;
+            background: #16a34a;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 8px;
+            font-size: 14px;
+            vertical-align: top;
+        }
+        .hidden {
+            display: none;
+        }
+        .status-pill {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 2px 8px;
+            background: #e2e8f0;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .toolbar {
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .toolbar input, .toolbar select {
+            min-width: 140px;
+            flex: 1;
+        }
+        .btn-muted {
+            background: #334155;
+        }
+        .btn-outline {
+            background: #fff;
+            border: 1px solid #16a34a;
+            color: #166534;
+        }
+        .btn-compact {
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        .row-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .detail-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+            background: #f8fafc;
+        }
+        .timeline-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 8px;
+            max-height: 260px;
+            overflow: auto;
+        }
+        .timeline-list li {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+            font-size: 13px;
+        }
+        textarea {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            width: 100%;
+            min-height: 90px;
+            resize: vertical;
+        }
+        @media (max-width: 900px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <section class="card" id="loginCard">
+            <h1>GreenSmart Admin Login</h1>
+            <p class="muted">Default admin comes from your server `.env` values.</p>
+            <form id="loginForm">
+                <input type="email" id="email" name="email" placeholder="admin@novagardenhome.com" required>
+                <input type="password" id="password" name="password" placeholder="Password" required>
+                <button type="submit" id="loginBtn">Sign in</button>
+            </form>
+            <p id="loginFeedback" class="muted"></p>
+        </section>
+
+        <section class="card hidden" id="dashboardCard">
+            <h1>Inquiry Dashboard</h1>
+            <p class="muted">Day 4: filters, status flow, and detail notes.</p>
+            <div class="toolbar">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="new">new</option>
+                    <option value="contacted">contacted</option>
+                    <option value="quoted">quoted</option>
+                    <option value="won">won</option>
+                    <option value="lost">lost</option>
+                </select>
+                <input id="countryFilter" type="text" placeholder="Filter by country">
+                <input id="productFilter" type="text" placeholder="Filter by product">
+                <input id="keywordFilter" type="text" placeholder="Search name/email/message">
+                <button id="applyFilterBtn" type="button" class="btn-outline">Apply</button>
+                <button id="clearFilterBtn" type="button" class="btn-outline">Clear</button>
+            </div>
+            <div class="toolbar">
+                <button id="refreshBtn" type="button">Refresh</button>
+                <button id="exportCsvBtn" type="button" class="btn-outline">Export CSV</button>
+                <button id="logoutBtn" type="button" class="btn-muted">Logout</button>
+                <span class="muted" id="summaryText">0 records</span>
+            </div>
+            <div class="toolbar">
+                <button id="prevPageBtn" type="button" class="btn-outline">Prev</button>
+                <span class="muted" id="pageInfo">Page 1 / 1</span>
+                <button id="nextPageBtn" type="button" class="btn-outline">Next</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Country</th>
+                            <th>Product</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inquiryRows"></tbody>
+                </table>
+            </div>
+            <div id="detailsPanel" class="details-grid hidden" style="margin-top:16px;">
+                <div class="detail-box">
+                    <h3 style="margin-top:0;">Inquiry Detail</h3>
+                    <p class="muted" id="detailMeta">Select a row to inspect details.</p>
+                    <p id="detailMessage" style="white-space:pre-wrap;"></p>
+                    <label for="detailStatusSelect">Update status</label>
+                    <select id="detailStatusSelect">
+                        <option value="new">new</option>
+                        <option value="contacted">contacted</option>
+                        <option value="quoted">quoted</option>
+                        <option value="won">won</option>
+                        <option value="lost">lost</option>
+                    </select>
+                    <label for="detailAssigneeSelect" style="display:block;margin-top:12px;">Assign owner</label>
+                    <select id="detailAssigneeSelect">
+                        <option value="">Unassigned</option>
+                    </select>
+                    <button id="saveStatusBtn" type="button" class="btn-compact" style="margin-top:10px;">Save status / assignee</button>
+                    <label for="detailNoteInput" style="display:block;margin-top:12px;">Add follow-up note</label>
+                    <textarea id="detailNoteInput" placeholder="Write call summary, quotation updates, next steps..."></textarea>
+                    <button id="addNoteBtn" type="button" class="btn-compact" style="margin-top:10px;">Add note</button>
+                </div>
+                <div class="detail-box">
+                    <h3 style="margin-top:0;">Timeline</h3>
+                    <ul id="timelineList" class="timeline-list"></ul>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script src="src/scripts/admin.js"></script>
+</body>
+</html>

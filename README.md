@@ -9,6 +9,8 @@ GreenSmart 是一个现代化的单页面展示网站，用于展示智能自动
 - **HTML5** - 语义化标记
 - **CSS3** - 现代样式和动画
 - **JavaScript (ES6+)** - 交互效果
+- **Express.js** - 轻量 API 与后台登录
+- **JSON Data Store** - 询盘与客户数据落盘
 - **Font Awesome** - 图标库
 - **Google Fonts** - 字体
 
@@ -42,6 +44,13 @@ npm run dev
 ```
 
 访问 http://localhost:8000 查看页面
+访问 http://localhost:8000/admin.html 查看后台登录页
+
+首次运行建议复制环境变量模板：
+
+```bash
+cp .env.example .env
+```
 
 ### 生产构建
 
@@ -125,6 +134,11 @@ docker run -p 80:80 greensmart
 - ✅ 产品卡片悬停效果
 - ✅ 加入购物车动画
 - ✅ 表单提交反馈
+- ✅ 询盘 API 入库（`POST /api/inquiries`）
+- ✅ 后台登录（`POST /api/auth/login`）
+- ✅ 后台询盘列表（`GET /api/inquiries`）
+- ✅ 询盘筛选、分页与 CSV 导出
+- ✅ 询盘状态流转、负责人分配、跟进备注
 - ✅ 图片懒加载动画
 - ✅ 订阅邮件功能
 

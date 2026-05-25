@@ -16,6 +16,9 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# Local runtime data store
+data/*.json
+
 # macOS/Windows junk
 .DS_Store
 Thumbs.db

@@ -115,6 +115,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initGa4(siteConfig.gaMeasurementId);
+    const defaultInquiryApiUrl = siteConfig.inquiryApiUrl
+        || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? '/api/inquiries' : '');
 
     const dictionaries = {
         en: {
@@ -1349,24 +1351,45 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    contactForm?.addEventListener('submit', function (e) {
+    contactForm?.addEventListener('submit', async function (e) {
         e.preventDefault();
         const lang = localStorage.getItem('greensmart-lang') || 'en';
         const formData = new FormData(this);
         const messages = {
-            en: { sending: 'Sending...', sent: 'Inquiry sent' },
-            zh: { sending: '发送中...', sent: '询盘已提交' },
-            vi: { sending: 'Dang gui...', sent: 'Da gui inquiry' },
-            th: { sending: 'กําลังส่ง...', sent: 'ส่งคำถามแล้ว' },
-            id: { sending: 'Mengirim...', sent: 'Inquiry terkirim' }
+            en: { sending: 'Sending...', sent: 'Inquiry sent', failed: 'Send failed, please try again.' },
+            zh: { sending: '发送中...', sent: '询盘已提交', failed: '提交失败，请稍后重试。' },
+            vi: { sending: 'Dang gui...', sent: 'Da gui inquiry', failed: 'Gui that bai, vui long thu lai.' },
+            th: { sending: 'กําลังส่ง...', sent: 'ส่งคำถามแล้ว', failed: 'ส่งไม่สำเร็จ โปรดลองอีกครั้ง' },
+            id: { sending: 'Mengirim...', sent: 'Inquiry terkirim', failed: 'Gagal kirim, silakan coba lagi.' }
         };
         const submitButton = this.querySelector('button[type="submit"]');
         const originalText = submitButton.textContent;
         const current = messages[lang] || messages.en;
         submitButton.disabled = true;
         submitButton.textContent = current.sending;
+        const payload = Object.fromEntries(formData.entries());
+        payload.lang = lang;
+        payload.source = 'website';
+        payload.pageUrl = window.location.href;
 
-        setTimeout(() => {
+        try {
+            if (defaultInquiryApiUrl) {
+                const requestHeaders = { 'Content-Type': 'application/json' };
+                if (siteConfig.inquiryApiBearer) {
+                    requestHeaders.Authorization = `Bearer ${siteConfig.inquiryApiBearer}`;
+                }
+                const response = await fetch(defaultInquiryApiUrl, {
+                    method: 'POST',
+                    headers: requestHeaders,
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}`);
+                }
+            } else {
+                await new Promise((resolve) => setTimeout(resolve, 800));
+            }
+
             submitButton.textContent = current.sent;
             submitButton.style.backgroundColor = '#28a745';
             trackEvent('submit_inquiry_success', withTrackingMeta({
@@ -1375,12 +1398,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 country: formData.get('country') || 'unknown'
             }));
             this.reset();
+        } catch (error) {
+            submitButton.textContent = current.failed;
+            submitButton.style.backgroundColor = '#dc2626';
+            trackEvent('submit_inquiry_failed', withTrackingMeta({
+                lang,
+                reason: error.message || 'unknown'
+            }));
+        } finally {
             setTimeout(() => {
                 submitButton.textContent = originalText;
                 submitButton.style.backgroundColor = '#22c55e';
                 submitButton.disabled = false;
             }, 1800);
-        }, 1200);
+        }
     });
 
     const observer = new IntersectionObserver((entries) => {
