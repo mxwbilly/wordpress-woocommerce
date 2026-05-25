@@ -28,12 +28,28 @@ const detailNoteInput = document.getElementById('detailNoteInput');
 const saveStatusBtn = document.getElementById('saveStatusBtn');
 const addNoteBtn = document.getElementById('addNoteBtn');
 const timelineList = document.getElementById('timelineList');
+const quotePriceInput = document.getElementById('quotePriceInput');
+const quoteCurrencyInput = document.getElementById('quoteCurrencyInput');
+const quoteMoqInput = document.getElementById('quoteMoqInput');
+const quoteIncotermInput = document.getElementById('quoteIncotermInput');
+const quoteValidityInput = document.getElementById('quoteValidityInput');
+const quoteNoteInput = document.getElementById('quoteNoteInput');
+const createQuoteBtn = document.getElementById('createQuoteBtn');
+const quoteList = document.getElementById('quoteList');
+const kpiTotal = document.getElementById('kpiTotal');
+const kpi7d = document.getElementById('kpi7d');
+const kpiQuoted = document.getElementById('kpiQuoted');
+const kpiWon = document.getElementById('kpiWon');
+const notifyEmailInput = document.getElementById('notifyEmailInput');
+const defaultAssigneeInput = document.getElementById('defaultAssigneeInput');
+const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
 let inquiryItems = [];
 let selectedInquiryId = '';
 let currentPage = 1;
 let totalItems = 0;
 let users = [];
+let currentUser = null;
 
 function setAuthState(loggedIn) {
     loginCard.classList.toggle('hidden', loggedIn);
@@ -145,6 +161,7 @@ function fillAssigneeOptions() {
         options.push(`<option value="${escapeHtml(user.id)}">${escapeHtml(user.name || user.email)}</option>`);
     });
     detailAssigneeSelect.innerHTML = options.join('');
+    defaultAssigneeInput.innerHTML = ['<option value="">Default assignee (none)</option>', ...options.slice(1)].join('');
 }
 
 function setSelectedInquiry(item) {
@@ -161,6 +178,12 @@ function setSelectedInquiry(item) {
     detailAssigneeSelect.value = item.assigneeId || '';
     detailNoteInput.value = '';
     renderTimeline(item);
+    renderQuotes(item.quotes || []);
+    quotePriceInput.value = '';
+    quoteMoqInput.value = '';
+    quoteIncotermInput.value = '';
+    quoteValidityInput.value = '30';
+    quoteNoteInput.value = '';
 }
 
 function buildQueryFromFilters() {
@@ -180,6 +203,52 @@ async function loadUsers() {
     fillAssigneeOptions();
 }
 
+function renderQuotes(quotes) {
+    if (!Array.isArray(quotes) || quotes.length === 0) {
+        quoteList.innerHTML = '<li>No quotes yet.</li>';
+        return;
+    }
+    const sorted = [...quotes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    quoteList.innerHTML = sorted.map((quote) => `
+        <li>
+            <strong>${escapeHtml(quote.quoteNo)}</strong>
+            <div>${escapeHtml(quote.currency)} ${escapeHtml(quote.unitPrice)} · MOQ ${escapeHtml(quote.moq || '-')} · ${escapeHtml(quote.incoterm || '-')}</div>
+            <div>Validity: ${escapeHtml(quote.validityDays)} day(s) · ${new Date(quote.createdAt).toLocaleString()}</div>
+            <div>${escapeHtml(quote.note || '')}</div>
+        </li>
+    `).join('');
+}
+
+function updateKpis(summary) {
+    const byStatus = summary?.byStatus || {};
+    kpiTotal.textContent = String(summary?.total || 0);
+    kpi7d.textContent = String(summary?.recent7d || 0);
+    kpiQuoted.textContent = String(byStatus.quoted || 0);
+    kpiWon.textContent = String(byStatus.won || 0);
+}
+
+async function loadDashboardSummary() {
+    const result = await apiFetch('/api/dashboard/summary');
+    updateKpis(result.item || {});
+}
+
+async function loadSettings() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        notifyEmailInput.value = '';
+        defaultAssigneeInput.value = '';
+        notifyEmailInput.disabled = true;
+        defaultAssigneeInput.disabled = true;
+        saveSettingsBtn.disabled = true;
+        return;
+    }
+    notifyEmailInput.disabled = false;
+    defaultAssigneeInput.disabled = false;
+    saveSettingsBtn.disabled = false;
+    const result = await apiFetch('/api/settings');
+    notifyEmailInput.value = result.item?.notifyEmail || '';
+    defaultAssigneeInput.value = result.item?.defaultAssigneeId || '';
+}
+
 async function loadInquiries() {
     try {
         const query = buildQueryFromFilters();
@@ -197,6 +266,7 @@ async function loadInquiries() {
                 setSelectedInquiry(detailResult.item);
             }
         }
+        await loadDashboardSummary();
     } catch (error) {
         inquiryRows.innerHTML = `<tr><td colspan="7">${error.message}</td></tr>`;
         summaryText.textContent = 'Load failed';
@@ -233,6 +303,26 @@ async function exportCsv() {
     URL.revokeObjectURL(url);
 }
 
+async function createQuote() {
+    if (!selectedInquiryId) {
+        alert('Please select an inquiry first.');
+        return;
+    }
+    const payload = {
+        unitPrice: Number(quotePriceInput.value),
+        currency: String(quoteCurrencyInput.value || 'USD').trim().toUpperCase(),
+        moq: quoteMoqInput.value.trim(),
+        incoterm: quoteIncotermInput.value.trim().toUpperCase(),
+        validityDays: Number(quoteValidityInput.value || 30),
+        note: quoteNoteInput.value.trim()
+    };
+    await apiFetch(`/api/inquiries/${encodeURIComponent(selectedInquiryId)}/quotes`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    });
+    await loadInquiries();
+}
+
 loginForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const submitBtn = document.getElementById('loginBtn');
@@ -246,9 +336,11 @@ loginForm?.addEventListener('submit', async (event) => {
             body: JSON.stringify(payload)
         });
         setToken(result.token);
+        currentUser = result.user || null;
         setAuthState(true);
         loginFeedback.textContent = '';
         await loadUsers();
+        await loadSettings();
         await loadInquiries();
     } catch (error) {
         loginFeedback.textContent = error.message;
@@ -306,6 +398,7 @@ logoutBtn?.addEventListener('click', () => {
     detailsPanel.classList.add('hidden');
     selectedInquiryId = '';
     users = [];
+    currentUser = null;
 });
 
 inquiryRows?.addEventListener('click', async (event) => {
@@ -367,6 +460,40 @@ addNoteBtn?.addEventListener('click', async () => {
     }
 });
 
+createQuoteBtn?.addEventListener('click', async () => {
+    createQuoteBtn.disabled = true;
+    try {
+        await createQuote();
+    } catch (error) {
+        alert(error.message);
+    } finally {
+        createQuoteBtn.disabled = false;
+    }
+});
+
+saveSettingsBtn?.addEventListener('click', async () => {
+    if (!currentUser || currentUser.role !== 'admin') {
+        alert('Only admin can update settings.');
+        return;
+    }
+    saveSettingsBtn.disabled = true;
+    try {
+        await apiFetch('/api/settings', {
+            method: 'PATCH',
+            body: JSON.stringify({
+                notifyEmail: notifyEmailInput.value.trim(),
+                defaultAssigneeId: defaultAssigneeInput.value
+            })
+        });
+        await loadSettings();
+        await loadInquiries();
+    } catch (error) {
+        alert(error.message);
+    } finally {
+        saveSettingsBtn.disabled = false;
+    }
+});
+
 async function boot() {
     const token = getToken();
     if (!token) {
@@ -374,9 +501,11 @@ async function boot() {
         return;
     }
     try {
-        await apiFetch('/api/auth/me');
+        const me = await apiFetch('/api/auth/me');
+        currentUser = me.user || null;
         setAuthState(true);
         await loadUsers();
+        await loadSettings();
         await loadInquiries();
     } catch (error) {
         setToken('');

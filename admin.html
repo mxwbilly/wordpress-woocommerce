@@ -119,6 +119,41 @@
             padding: 12px;
             background: #f8fafc;
         }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .kpi-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px;
+            background: #f8fafc;
+        }
+        .kpi-label {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .kpi-value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .quote-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 8px;
+            max-height: 220px;
+            overflow: auto;
+        }
+        .quote-list li {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+            font-size: 13px;
+        }
         .timeline-list {
             list-style: none;
             padding: 0;
@@ -146,6 +181,9 @@
             .details-grid {
                 grid-template-columns: 1fr;
             }
+            .kpi-grid {
+                grid-template-columns: repeat(2, minmax(120px, 1fr));
+            }
         }
     </style>
 </head>
@@ -165,6 +203,24 @@
         <section class="card hidden" id="dashboardCard">
             <h1>Inquiry Dashboard</h1>
             <p class="muted">Day 4: filters, status flow, and detail notes.</p>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total</div>
+                    <div class="kpi-value" id="kpiTotal">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Recent 7d</div>
+                    <div class="kpi-value" id="kpi7d">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Quoted</div>
+                    <div class="kpi-value" id="kpiQuoted">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Won</div>
+                    <div class="kpi-value" id="kpiWon">0</div>
+                </div>
+            </div>
             <div class="toolbar">
                 <select id="statusFilter">
                     <option value="">All Status</option>
@@ -230,8 +286,33 @@
                     <button id="addNoteBtn" type="button" class="btn-compact" style="margin-top:10px;">Add note</button>
                 </div>
                 <div class="detail-box">
+                    <h3 style="margin-top:0;">Quotes</h3>
+                    <div class="toolbar">
+                        <input id="quotePriceInput" type="number" min="0" step="0.01" placeholder="Unit price">
+                        <input id="quoteCurrencyInput" type="text" value="USD" maxlength="3" placeholder="Currency">
+                        <input id="quoteMoqInput" type="text" placeholder="MOQ (optional)">
+                    </div>
+                    <div class="toolbar">
+                        <input id="quoteIncotermInput" type="text" placeholder="Incoterm (EXW/FOB/CIF)">
+                        <input id="quoteValidityInput" type="number" min="1" max="180" value="30" placeholder="Validity days">
+                        <button id="createQuoteBtn" type="button" class="btn-compact">Create quote</button>
+                    </div>
+                    <textarea id="quoteNoteInput" placeholder="Quote notes (packaging, lead time, exclusions)..."></textarea>
+                    <ul id="quoteList" class="quote-list" style="margin-top:10px;"></ul>
+                </div>
+                <div class="detail-box">
                     <h3 style="margin-top:0;">Timeline</h3>
                     <ul id="timelineList" class="timeline-list"></ul>
+                </div>
+            </div>
+            <div class="detail-box" style="margin-top:16px;">
+                <h3 style="margin-top:0;">System Settings (Admin)</h3>
+                <div class="toolbar">
+                    <input id="notifyEmailInput" type="email" placeholder="Notification email">
+                    <select id="defaultAssigneeInput">
+                        <option value="">Default assignee (none)</option>
+                    </select>
+                    <button id="saveSettingsBtn" type="button" class="btn-compact">Save settings</button>
                 </div>
             </div>
         </section>

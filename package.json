@@ -28,6 +28,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "google-trends-api": "^4.9.2",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.10.1"
   }
 }
