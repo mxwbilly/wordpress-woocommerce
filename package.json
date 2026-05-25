@@ -5,7 +5,7 @@
   "main": "index.html",
   "scripts": {
     "dev": "http-server -p 8000 -c-1",
-    "build": "mkdir -p dist && cp -r index.html src dist/",
+    "build": "mkdir -p dist && cp -r index.html src _headers dist/",
     "deploy": "npm run build && rsync -avz dist/ user@your-server:/var/www/html/",
     "start": "http-server -p 8000",
     "qa:check": "node qa-check.js"
