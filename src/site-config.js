@@ -10,7 +10,7 @@
  * Leave inquiryApiUrl empty to keep the built‑in demo submit (no network).
  */
 window.GREENSMART_CONFIG = {
-    gaMeasurementId: 'G-5XHYTMM3P2',
+    gaMeasurementId: 'G-F5H253NYTK',
     inquiryApiUrl: '',
     inquiryApiBearer: ''
 };
