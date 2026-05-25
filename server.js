@@ -54,6 +54,12 @@ function toCsvCell(value) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+function buildInquiryMailSubject(prefix, product, country, inquiryId) {
+  const safeProduct = String(product || 'unknown-product').trim() || 'unknown-product';
+  const safeCountry = String(country || 'unknown-country').trim() || 'unknown-country';
+  return `[GreenSmart] ${prefix} ${safeProduct} | ${safeCountry} | ${inquiryId}`;
+}
+
 function isTruthy(value) {
   return ['1', 'true', 'yes', 'on'].includes(String(value || '').toLowerCase());
 }
@@ -451,7 +457,7 @@ function createApp() {
       const notifyEmail = settings.notifyEmail || NOTIFY_EMAIL;
       await sendEmail({
         to: notifyEmail,
-        subject: `[GreenSmart] New inquiry ${inquiry.id}`,
+        subject: buildInquiryMailSubject('New inquiry', inquiry.product, safeCountry, inquiry.id),
         text: [
           `Inquiry ID: ${inquiry.id}`,
           `Name: ${safeName}`,
@@ -465,7 +471,7 @@ function createApp() {
       if (assignee?.email) {
         await sendEmail({
           to: assignee.email,
-          subject: `[GreenSmart] Assigned inquiry ${inquiry.id}`,
+          subject: buildInquiryMailSubject('Assigned inquiry', inquiry.product, safeCountry, inquiry.id),
           text: `A new inquiry was assigned to you.\n\nInquiry ID: ${inquiry.id}\nBuyer: ${safeName}\nEmail: ${safeEmail}\nCountry: ${safeCountry}`
         });
       }
@@ -725,7 +731,7 @@ function createApp() {
         if (assignee?.email) {
           await sendEmail({
             to: assignee.email,
-            subject: `[GreenSmart] Inquiry assigned ${target.id}`,
+            subject: buildInquiryMailSubject('Inquiry assigned', target.product, target.contact?.country, target.id),
             text: `You were assigned inquiry ${target.id}.\nBuyer: ${target.contact?.name || ''}\nEmail: ${target.contact?.email || ''}\nStatus: ${target.status}`
           });
         }
