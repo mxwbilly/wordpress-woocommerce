@@ -1582,6 +1582,37 @@ body {
     gap: 24px;
 }
 
+.seo-faq {
+    padding: 80px 0;
+    background: #fff;
+}
+
+.seo-faq-list {
+    display: grid;
+    gap: 16px;
+    max-width: 920px;
+    margin: 0 auto;
+}
+
+.seo-faq-item {
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 20px;
+    background: #f8fafc;
+}
+
+.seo-faq-item h3 {
+    margin-bottom: 8px;
+    font-size: 18px;
+    line-height: 1.4;
+}
+
+.seo-faq-item p {
+    color: var(--text-gray);
+    font-size: 14px;
+    line-height: 1.75;
+}
+
 .review-card {
     background-color: #fff;
     padding: 24px;
@@ -2164,6 +2195,73 @@ body {
     background: var(--primary-color);
 }
 
+.trust-assets {
+    padding: 24px 0 48px;
+    background: #fff;
+}
+
+.trust-assets-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.trust-asset-card {
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 20px;
+    padding: 24px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: var(--shadow-sm);
+}
+
+.trust-asset-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.trust-asset-header i {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+.trust-asset-header h3 {
+    font-size: 18px;
+}
+
+.trust-asset-list {
+    list-style: none;
+    margin-bottom: 18px;
+    display: grid;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-gray);
+}
+
+.trust-asset-list li {
+    position: relative;
+    padding-left: 18px;
+    line-height: 1.55;
+}
+
+.trust-asset-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+}
+
 .product-meta {
     display: flex;
     flex-direction: column;
@@ -2211,6 +2309,160 @@ body {
     font: inherit;
     color: var(--text-dark);
     background: #fff;
+}
+
+.form-helper {
+    margin-top: -2px;
+    font-size: 12px;
+    color: var(--text-gray);
+    font-weight: 500;
+}
+
+.form-helper-error {
+    display: none;
+    color: #dc2626;
+}
+
+.multi-select {
+    position: relative;
+}
+
+.multi-select-trigger {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 42px 14px 16px;
+    font: inherit;
+    color: var(--text-dark);
+    background: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.multi-select-trigger::after {
+    content: '';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #9ca3af;
+    border-bottom: 2px solid #9ca3af;
+    transform: translateY(-60%) rotate(45deg);
+    transition: transform 0.2s ease;
+}
+
+.multi-select.is-open .multi-select-trigger {
+    border-color: rgba(34, 197, 94, 0.55);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+}
+
+.multi-select.is-open .multi-select-trigger::after {
+    transform: translateY(-35%) rotate(-135deg);
+}
+
+.multi-select-menu {
+    display: none;
+    position: absolute;
+    z-index: 25;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    max-height: 220px;
+    overflow: auto;
+    background: #fff;
+    border: 1px solid rgba(31, 41, 55, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14);
+    padding: 8px;
+}
+
+.multi-select.is-open .multi-select-menu {
+    display: block;
+}
+
+.multi-select-option {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    gap: 10px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dark);
+    cursor: pointer;
+    min-width: 0;
+}
+
+.multi-select-option:hover {
+    background: #f3f4f6;
+}
+
+.enhanced-form .multi-select-option {
+    flex-direction: row;
+}
+
+.multi-select-option input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    display: inline-grid;
+    place-content: center;
+    margin: 0 0 0 auto;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    order: 2;
+}
+
+.multi-select-option input[type="checkbox"]::before {
+    content: '';
+    width: 9px;
+    height: 5px;
+    border-left: 2px solid var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    transform: rotate(-45deg) scale(0.8);
+    transform-origin: center;
+    opacity: 0;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.multi-select-option input[type="checkbox"]:checked {
+    background: transparent;
+    border-color: transparent;
+}
+
+.multi-select-option input[type="checkbox"]:checked::before {
+    transform: rotate(-45deg) scale(1);
+    opacity: 1;
+}
+
+.multi-select-option input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+.multi-select-option span {
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.multi-select.is-invalid .multi-select-trigger {
+    border-color: rgba(220, 38, 38, 0.6);
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
+}
+
+.multi-select.is-invalid + .form-helper + .form-helper-error {
+    display: block;
 }
 
 .enhanced-form textarea {
@@ -2316,6 +2568,20 @@ body {
     padding: 0 0 72px;
 }
 
+.detail-procurement {
+    padding: 0 0 72px;
+}
+
+.procurement-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.procurement-grid .detail-card .btn {
+    margin-top: 8px;
+}
+
 .detail-focus-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2409,6 +2675,10 @@ body {
     }
 
     .detail-focus-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .procurement-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -2675,6 +2945,7 @@ html[lang="id"] .trend-chip-balcony {
     }
 
     .proof-grid,
+    .trust-assets-grid,
     .form-grid,
     .detail-layout,
     .detail-grid,

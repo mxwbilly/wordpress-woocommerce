@@ -54,6 +54,93 @@ function toCsvCell(value) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+function hasText(value) {
+  return String(value || '').trim().length > 0;
+}
+
+function computeRfqCompleteness(inquiry) {
+  const messageLength = String(inquiry?.message || '').trim().length;
+  const rules = [
+    { key: 'name', weight: 8, pass: hasText(inquiry?.contact?.name) },
+    { key: 'email', weight: 8, pass: hasText(inquiry?.contact?.email) },
+    { key: 'country', weight: 8, pass: hasText(inquiry?.contact?.country) },
+    { key: 'company', weight: 10, pass: hasText(inquiry?.contact?.company) },
+    { key: 'phone', weight: 10, pass: hasText(inquiry?.contact?.phone) },
+    { key: 'product', weight: 12, pass: hasText(inquiry?.product) },
+    { key: 'quantity', weight: 10, pass: hasText(inquiry?.quantity) },
+    { key: 'oem', weight: 6, pass: hasText(inquiry?.oem) },
+    { key: 'port', weight: 5, pass: hasText(inquiry?.port) },
+    { key: 'deadline', weight: 5, pass: hasText(inquiry?.deadline) },
+    { key: 'message', weight: 18, pass: messageLength >= 10 }
+  ];
+  const maxScore = rules.reduce((sum, item) => sum + item.weight, 0);
+  let score = 0;
+  for (const item of rules) {
+    if (item.key === 'message') {
+      if (messageLength >= 30) {
+        score += item.weight;
+      } else if (messageLength >= 10) {
+        score += 10;
+      }
+      continue;
+    }
+    if (item.pass) {
+      score += item.weight;
+    }
+  }
+  const percent = Math.round((score / maxScore) * 100);
+  const level = percent >= 85 ? 'high' : percent >= 70 ? 'medium' : 'low';
+  const missingFields = rules.filter((item) => {
+    if (item.key === 'message') {
+      return messageLength < 10;
+    }
+    return !item.pass;
+  }).map((item) => item.key);
+  const filledFields = rules
+    .map((item) => item.key)
+    .filter((key) => !missingFields.includes(key));
+  return {
+    score,
+    maxScore,
+    percent,
+    level,
+    missingFields,
+    filledFields
+  };
+}
+
+function getPriorityLevelByRfqPercent(percent) {
+  if (percent >= 85) return 'high';
+  if (percent >= 70) return 'medium';
+  return 'low';
+}
+
+function computeSlaState(inquiry, nowMs = Date.now()) {
+  const terminal = new Set(['won', 'lost']);
+  if (terminal.has(String(inquiry?.status || ''))) {
+    return { breached: false, overdueHours: 0, thresholdHours: 24 };
+  }
+  const parsedTs = new Date(inquiry?.updatedAt || inquiry?.createdAt || nowIso()).getTime();
+  const anchorTs = Number.isFinite(parsedTs) ? parsedTs : nowMs;
+  const elapsedHours = Math.max(0, (nowMs - anchorTs) / (1000 * 60 * 60));
+  const overdueHours = Math.max(0, Math.floor(elapsedHours - 24));
+  return {
+    breached: elapsedHours > 24,
+    overdueHours,
+    thresholdHours: 24
+  };
+}
+
+function withRfqCompleteness(inquiry) {
+  const rfq = computeRfqCompleteness(inquiry);
+  return {
+    ...inquiry,
+    rfqCompleteness: rfq,
+    priority: getPriorityLevelByRfqPercent(rfq.percent),
+    sla: computeSlaState(inquiry)
+  };
+}
+
 function buildInquiryMailSubject(prefix, product, country, inquiryId) {
   const safeProduct = String(product || 'unknown-product').trim() || 'unknown-product';
   const safeCountry = String(country || 'unknown-country').trim() || 'unknown-country';
@@ -180,6 +267,9 @@ function createApp() {
     const keywordFilter = String(filters.q || '').trim().toLowerCase();
     const countryFilter = String(filters.country || '').trim().toLowerCase();
     const productFilter = String(filters.product || '').trim().toLowerCase();
+    const rfqLevelFilter = String(filters.rfqLevel || '').trim().toLowerCase();
+    const priorityFilter = String(filters.priority || '').trim().toLowerCase();
+    const slaFilter = String(filters.sla || '').trim().toLowerCase();
     const dateFrom = String(filters.from || '').trim();
     const dateTo = String(filters.to || '').trim();
 
@@ -192,6 +282,23 @@ function createApp() {
       }
       if (productFilter && !String(item.product || '').toLowerCase().includes(productFilter)) {
         return false;
+      }
+      if (rfqLevelFilter) {
+        const level = computeRfqCompleteness(item).level;
+        if (level !== rfqLevelFilter) {
+          return false;
+        }
+      }
+      if (priorityFilter) {
+        const priority = getPriorityLevelByRfqPercent(computeRfqCompleteness(item).percent);
+        if (priority !== priorityFilter) {
+          return false;
+        }
+      }
+      if (slaFilter === 'breached') {
+        if (!computeSlaState(item).breached) {
+          return false;
+        }
       }
       if (dateFrom && new Date(item.createdAt) < new Date(dateFrom)) {
         return false;
@@ -213,6 +320,48 @@ function createApp() {
       }
       return true;
     });
+  }
+
+  function applyInquirySort(inquiries, sortBy) {
+    const sort = String(sortBy || 'created_desc').trim();
+    const items = [...inquiries];
+    if (sort === 'created_asc') {
+      return items.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    }
+    if (sort === 'rfq_desc') {
+      return items.sort((a, b) => {
+        const diff = computeRfqCompleteness(b).percent - computeRfqCompleteness(a).percent;
+        if (diff !== 0) return diff;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+    }
+    if (sort === 'rfq_asc') {
+      return items.sort((a, b) => {
+        const diff = computeRfqCompleteness(a).percent - computeRfqCompleteness(b).percent;
+        if (diff !== 0) return diff;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+    }
+    if (sort === 'priority_desc') {
+      const rank = { high: 3, medium: 2, low: 1 };
+      return items.sort((a, b) => {
+        const diff = rank[getPriorityLevelByRfqPercent(computeRfqCompleteness(b).percent)]
+          - rank[getPriorityLevelByRfqPercent(computeRfqCompleteness(a).percent)];
+        if (diff !== 0) return diff;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+    }
+    if (sort === 'sla_desc') {
+      return items.sort((a, b) => {
+        const aSla = computeSlaState(a);
+        const bSla = computeSlaState(b);
+        if (aSla.breached !== bSla.breached) {
+          return aSla.breached ? -1 : 1;
+        }
+        return bSla.overdueHours - aSla.overdueHours;
+      });
+    }
+    return items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
 
   app.get('/api/health', (req, res) => {
@@ -399,11 +548,36 @@ function createApp() {
 
       const inquiries = await readJson(DATA_FILES.inquiries);
       const settings = await readJson(DATA_FILES.settings);
+      const users = await readJson(DATA_FILES.users);
+      const rfqPreview = computeRfqCompleteness({
+        product: String(payload.product || ''),
+        quantity: String(payload.quantity || ''),
+        oem: String(payload.oem || ''),
+        port: String(payload.port || ''),
+        deadline: String(payload.deadline || ''),
+        message: safeMessage,
+        contact: {
+          name: safeName,
+          email: safeEmail,
+          phone: safePhone,
+          company: safeCompany,
+          country: safeCountry
+        }
+      });
+      let autoAssignedByPriority = false;
+      let autoAssignedAssigneeId = settings.defaultAssigneeId || null;
+      if (!autoAssignedAssigneeId && rfqPreview.level === 'high') {
+        const candidate = users.find((user) => user.role === 'sales') || users.find((user) => user.role === 'admin');
+        if (candidate) {
+          autoAssignedAssigneeId = candidate.id;
+          autoAssignedByPriority = true;
+        }
+      }
       const inquiry = {
         id: newId('inq'),
         customerId: customer.id,
         status: 'new',
-        assigneeId: settings.defaultAssigneeId || null,
+        assigneeId: autoAssignedAssigneeId,
         lang: String(payload.lang || 'en'),
         source: String(payload.source || 'website'),
         pageUrl: String(payload.pageUrl || ''),
@@ -438,6 +612,15 @@ function createApp() {
           note: `Auto assigned to ${inquiry.assigneeId}.`
         });
       }
+      if (rfqPreview.level === 'high') {
+        inquiry.timeline.push({
+          at: nowIso(),
+          type: 'priority',
+          note: autoAssignedByPriority
+            ? 'High-priority RFQ detected and auto-assigned by rule.'
+            : 'High-priority RFQ detected.'
+        });
+      }
       inquiries.push(inquiry);
       await writeJson(DATA_FILES.inquiries, inquiries);
 
@@ -452,7 +635,6 @@ function createApp() {
         }
       });
 
-      const users = await readJson(DATA_FILES.users);
       const assignee = inquiry.assigneeId ? users.find((user) => user.id === inquiry.assigneeId) : null;
       const notifyEmail = settings.notifyEmail || NOTIFY_EMAIL;
       await sendEmail({
@@ -501,13 +683,31 @@ function createApp() {
         won: 0,
         lost: 0
       };
+      const byPriority = { high: 0, medium: 0, low: 0 };
+      let slaBreachedOpen = 0;
       const byCountry = {};
+      const byPage = {};
+      const byProduct = {};
       for (const inquiry of inquiries) {
         if (byStatus[inquiry.status] !== undefined) {
           byStatus[inquiry.status] += 1;
         }
+        const priority = getPriorityLevelByRfqPercent(computeRfqCompleteness(inquiry).percent);
+        byPriority[priority] = (byPriority[priority] || 0) + 1;
+        if (computeSlaState(inquiry).breached) {
+          slaBreachedOpen += 1;
+        }
         const country = String(inquiry.contact?.country || 'unknown').trim() || 'unknown';
+        const product = String(inquiry.product || 'unknown').trim() || 'unknown';
+        const page = String(inquiry.pageUrl || `/product/${product}`).trim() || '/';
         byCountry[country] = (byCountry[country] || 0) + 1;
+        byProduct[product] = (byProduct[product] || 0) + 1;
+        if (!byPage[page]) {
+          byPage[page] = { page, total: 0, quoted: 0, won: 0 };
+        }
+        byPage[page].total += 1;
+        if (inquiry.status === 'quoted') byPage[page].quoted += 1;
+        if (inquiry.status === 'won') byPage[page].won += 1;
       }
       const recent7d = inquiries.filter((item) => new Date(item.createdAt).getTime() >= sevenDaysAgo).length;
       const recent30d = inquiries.filter((item) => new Date(item.createdAt).getTime() >= thirtyDaysAgo).length;
@@ -515,6 +715,22 @@ function createApp() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 6)
         .map(([country, count]) => ({ country, count }));
+      const topProducts = Object.entries(byProduct)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([product, count]) => ({ product, count }));
+      const topPages = Object.values(byPage)
+        .map((entry) => ({
+          ...entry,
+          quoteRate: entry.total ? Math.round((entry.quoted / entry.total) * 100) : 0,
+          winRate: entry.total ? Math.round((entry.won / entry.total) * 100) : 0
+        }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+      const highIntentPages = topPages
+        .filter((entry) => entry.total >= 2 && (entry.quoted > 0 || entry.won > 0))
+        .sort((a, b) => (b.won * 3 + b.quoted) - (a.won * 3 + a.quoted))
+        .slice(0, 5);
       return res.json({
         ok: true,
         item: {
@@ -522,7 +738,12 @@ function createApp() {
           recent7d,
           recent30d,
           byStatus,
-          topCountries
+          byPriority,
+          slaBreachedOpen,
+          topCountries,
+          topProducts,
+          topPages,
+          highIntentPages
         }
       });
     } catch (error) {
@@ -535,11 +756,11 @@ function createApp() {
       const page = Math.max(1, Number.parseInt(String(req.query.page || '1'), 10) || 1);
       const pageSize = Math.min(100, Math.max(1, Number.parseInt(String(req.query.pageSize || '20'), 10) || 20));
       const inquiries = await readJson(DATA_FILES.inquiries);
-      const sorted = inquiries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      const filtered = applyInquiryFilters(sorted, req.query);
-      const total = filtered.length;
+      const filtered = applyInquiryFilters(inquiries, req.query);
+      const sorted = applyInquirySort(filtered, req.query.sort);
+      const total = sorted.length;
       const offset = (page - 1) * pageSize;
-      const items = filtered.slice(offset, offset + pageSize);
+      const items = sorted.slice(offset, offset + pageSize).map(withRfqCompleteness);
       return res.json({ ok: true, items, page, pageSize, total });
     } catch (error) {
       return res.status(500).json({ ok: false, error: 'Failed to load inquiries.' });
@@ -549,33 +770,46 @@ function createApp() {
   app.get('/api/admin/inquiries/export.csv', requireAuth, requireRole('admin', 'sales'), async (req, res) => {
     try {
       const inquiries = await readJson(DATA_FILES.inquiries);
-      const sorted = inquiries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      const filtered = applyInquiryFilters(sorted, req.query);
+      const filtered = applyInquiryFilters(inquiries, req.query);
+      const sorted = applyInquirySort(filtered, req.query.sort);
       const header = [
         'id', 'createdAt', 'updatedAt', 'status', 'assigneeId', 'lang', 'source', 'pageUrl',
-        'name', 'email', 'phone', 'company', 'country', 'product', 'quantity', 'oem', 'port', 'deadline', 'message'
+        'name', 'email', 'phone', 'company', 'country', 'product', 'quantity', 'oem', 'port', 'deadline', 'message',
+        'rfqScore', 'rfqPercent', 'rfqLevel', 'rfqMissingFields', 'priority', 'slaBreached', 'slaOverdueHours'
       ];
-      const rows = filtered.map((item) => [
-        item.id,
-        item.createdAt,
-        item.updatedAt,
-        item.status,
-        item.assigneeId || '',
-        item.lang || '',
-        item.source || '',
-        item.pageUrl || '',
-        item.contact?.name || '',
-        item.contact?.email || '',
-        item.contact?.phone || '',
-        item.contact?.company || '',
-        item.contact?.country || '',
-        item.product || '',
-        item.quantity || '',
-        item.oem || '',
-        item.port || '',
-        item.deadline || '',
-        item.message || ''
-      ]);
+      const rows = sorted.map((item) => {
+        const rfq = computeRfqCompleteness(item);
+        const priority = getPriorityLevelByRfqPercent(rfq.percent);
+        const sla = computeSlaState(item);
+        return [
+          item.id,
+          item.createdAt,
+          item.updatedAt,
+          item.status,
+          item.assigneeId || '',
+          item.lang || '',
+          item.source || '',
+          item.pageUrl || '',
+          item.contact?.name || '',
+          item.contact?.email || '',
+          item.contact?.phone || '',
+          item.contact?.company || '',
+          item.contact?.country || '',
+          item.product || '',
+          item.quantity || '',
+          item.oem || '',
+          item.port || '',
+          item.deadline || '',
+          item.message || '',
+          rfq.score,
+          rfq.percent,
+          rfq.level,
+          rfq.missingFields.join('|'),
+          priority,
+          sla.breached ? 'yes' : 'no',
+          sla.overdueHours
+        ];
+      });
       const csv = [header, ...rows].map((row) => row.map(toCsvCell).join(',')).join('\n');
       const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -594,7 +828,7 @@ function createApp() {
       if (!target) {
         return res.status(404).json({ ok: false, error: 'Inquiry not found.' });
       }
-      return res.json({ ok: true, item: target });
+      return res.json({ ok: true, item: withRfqCompleteness(target) });
     } catch (error) {
       return res.status(500).json({ ok: false, error: 'Failed to load inquiry.' });
     }

@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const mobileToggle = document.getElementById('mobileToggle');
     const mobileMenu = document.getElementById('mobileMenu');
     const contactForm = document.getElementById('contactForm');
+    const productMultiSelect = contactForm?.querySelector('[data-multi-select]') || null;
     const backToTop = document.getElementById('backToTop');
     const langButtons = document.querySelectorAll('.lang-btn');
     const metaDescription = document.querySelector('meta[name="description"]');
@@ -118,6 +119,78 @@ document.addEventListener('DOMContentLoaded', function () {
     const defaultInquiryApiUrl = siteConfig.inquiryApiUrl
         || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? '/api/inquiries' : '');
 
+    function updateProductMultiSelectDisplay() {
+        if (!productMultiSelect) {
+            return;
+        }
+
+        const trigger = productMultiSelect.querySelector('[data-multi-select-trigger]');
+        const checkedOptions = Array.from(productMultiSelect.querySelectorAll('input[name="product"]:checked'));
+        if (!trigger) {
+            return;
+        }
+
+        const placeholderText = trigger.dataset.placeholderText || trigger.textContent || '';
+        if (!checkedOptions.length) {
+            trigger.textContent = placeholderText;
+            return;
+        }
+
+        const labels = checkedOptions
+            .map((input) => input.closest('label')?.querySelector('span')?.textContent?.trim() || '')
+            .filter(Boolean);
+
+        if (labels.length <= 2) {
+            trigger.textContent = labels.join(' / ');
+            return;
+        }
+
+        trigger.textContent = `${labels.slice(0, 2).join(' / ')} +${labels.length - 2}`;
+    }
+
+    function initProductMultiSelect() {
+        if (!productMultiSelect) {
+            return;
+        }
+
+        const trigger = productMultiSelect.querySelector('[data-multi-select-trigger]');
+        const checkboxes = productMultiSelect.querySelectorAll('input[name="product"]');
+        if (!trigger || !checkboxes.length) {
+            return;
+        }
+
+        const closeMultiSelect = () => {
+            productMultiSelect.classList.remove('is-open');
+            trigger.setAttribute('aria-expanded', 'false');
+        };
+
+        trigger.addEventListener('click', function () {
+            const isOpen = productMultiSelect.classList.toggle('is-open');
+            trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', function () {
+                productMultiSelect.classList.remove('is-invalid');
+                updateProductMultiSelectDisplay();
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!productMultiSelect.contains(event.target)) {
+                closeMultiSelect();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeMultiSelect();
+            }
+        });
+
+        updateProductMultiSelectDisplay();
+    }
+
     const dictionaries = {
         en: {
             title: 'Wholesale Flower Pots & Self-Watering Planters Manufacturer | GreenSmart',
@@ -126,12 +199,12 @@ document.addEventListener('DOMContentLoaded', function () {
             strings: {
                 floating_whatsapp: 'WhatsApp Us',
                 nav_products: 'Products',
-                nav_factory: 'Factory Proof',
+                nav_factory: 'Proof & Terms',
                 nav_services: 'OEM & Export',
                 nav_reviews: 'Buyer Feedback',
                 nav_contact: 'Contact',
                 nav_products_mobile: 'Products',
-                nav_factory_mobile: 'Factory Proof',
+                nav_factory_mobile: 'Proof & Terms',
                 nav_services_mobile: 'OEM & Export',
                 nav_reviews_mobile: 'Buyer Feedback',
                 nav_contact_mobile: 'Contact',
@@ -169,16 +242,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 proof_card_2_item_1: 'Add BSCI / Sedex / ISO if available',
                 proof_card_2_item_2: 'Add ROHS / REACH / food-safe notes if relevant',
                 proof_card_2_item_3: 'Add packaging and carton test details',
-                proof_card_3_title: 'Export ability slot',
-                proof_card_3_desc: 'Show lead time, loading ports, and shipping handling capability.',
+                proof_card_3_title: 'Export terms and delivery',
+                proof_card_3_desc: 'Share your standard terms for sample lead time, bulk lead time, and loading ports.',
                 proof_card_3_item_1: 'Main ports: Shenzhen / Guangzhou / Xiamen',
-                proof_card_3_item_2: 'Sample lead time: update actual days',
-                proof_card_3_item_3: 'Bulk lead time: update actual days',
+                proof_card_3_item_2: 'Sample lead time: 5-7 days (reference)',
+                proof_card_3_item_3: 'Bulk lead time: 20-35 days after deposit (reference)',
                 proof_card_4_title: 'Social proof slot',
                 proof_card_4_desc: 'Reserve space for real buyer cases, container loading photos, and store placements.',
                 proof_card_4_item_1: 'Top market case studies by country',
                 proof_card_4_item_2: 'Private label packaging examples',
                 proof_card_4_item_3: 'Buyer testimonial screenshots or videos',
+                trust_assets_title: 'Buyer trust assets you can share in first contact',
+                trust_assets_desc: 'Use this block as your first-response checklist so import buyers can quickly verify compliance, shipping reliability, and project fit.',
+                trust_doc_title: 'Compliance file pack',
+                trust_doc_item_1: 'Company profile, product catalog, and factory photos PDF',
+                trust_doc_item_2: 'BSCI / Sedex / ISO and selected test reports (if available)',
+                trust_doc_item_3: 'Packaging spec sheet and carton drop-test summary',
+                trust_doc_cta: 'Request compliance files',
+                trust_shipping_title: 'Shipping and lead-time records',
+                trust_shipping_item_1: 'Recent shipment references by country and product category',
+                trust_shipping_item_2: 'Sample and bulk lead-time benchmark by season',
+                trust_shipping_item_3: 'Main loading ports and Incoterms support scope',
+                trust_shipping_cta: 'Request shipping records',
+                trust_case_title: 'Buyer case snapshots',
+                trust_case_item_1: 'OEM logo and private-label packaging examples',
+                trust_case_item_2: 'Retail shelf photos and project installation photos',
+                trust_case_item_3: 'Order cycle examples: sample to first container timeline',
+                trust_case_cta: 'Get buyer case pack',
                 quick_1_title: 'WhatsApp sales',
                 quick_1_cta: 'Start chat',
                 quick_2_title: 'Call support',
@@ -283,15 +373,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 review_3_location: 'Singapore',
                 review_3_text: '“Independent sites convert better once real compliance files, case photos, and exact lead times are visible.”',
                 review_3_product: 'Reference slot: compliance and export support',
+                faq_title: 'OEM Planter FAQ: MOQ, Lead Time, and Export Terms',
+                faq_desc: 'Practical answers for import buyers evaluating OEM flower pots, private label options, MOQ policy, and bulk shipment lead time.',
+                faq_q1: 'What is your MOQ for OEM flower pots and private label orders?',
+                faq_a1: 'Our MOQ depends on product type and customization depth. For most categories, standard SKUs start from 50-500 pieces, while OEM logo and custom packaging projects usually require higher volumes for stable unit cost.',
+                faq_q2: 'How long is sample lead time and bulk production lead time?',
+                faq_a2: 'Sample lead time is typically 5-10 days for standard options. Bulk production lead time is usually 20-35 days after deposit and artwork confirmation, with extra buffer recommended during peak season.',
+                faq_q3: 'Do you support OEM logo, custom colors, and branded packaging?',
+                faq_a3: 'Yes. We support OEM logo printing, custom color programs, barcode labels, insert cards, and retail-ready cartons. Final feasibility depends on product line, quantity, and target shipment schedule.',
+                faq_q4: 'Which Incoterms and destination ports can you handle?',
+                faq_a4: 'Common terms include FOB and CIF, and we can align shipment planning for major Southeast Asia destination ports. Share your destination port and timeline early to speed up freight and quote confirmation.',
+                faq_q5: 'What information is needed to get an accurate wholesale quote quickly?',
+                faq_a5: 'Please provide product type, quantity, OEM requirement, destination port, target delivery month, and packaging standard. Complete RFQ details help us return a precise offer within 24 business hours.',
                 contact_title: 'Request a wholesale quote',
                 contact_desc: 'The inquiry form now reserves the practical fields B2B buyers usually need: company, country, OEM request, target port, and expected order timing.',
-                contact_info_1_title: 'Factory address slot',
-                contact_info_1_desc: 'Update with your exact production base, showroom, and nearest export port.',
+                contact_info_1_title: 'Factory and shipping base',
+                contact_info_1_desc: 'Shanghai office support, China factory coordination, and export shipping via major South China ports.',
                 contact_info_2_title: 'Sales contacts',
-                contact_info_3_title: 'Email slot',
-                contact_info_3_desc: 'Replace with your real export sales address if needed.',
-                contact_info_4_title: 'Buyer-ready data slot',
-                contact_info_4_desc: 'Add MOQ policy, sample policy, Incoterms, and payment terms here.',
+                contact_info_3_title: 'Business email',
+                contact_info_3_desc: 'Send RFQ details, BOM files, and packaging requests by email for faster quoting.',
+                contact_info_4_title: 'Buyer policy snapshot',
+                contact_info_4_desc: 'Typical terms: MOQ by SKU, paid samples refundable on bulk order, FOB/CIF support, and 30/70 TT payment.',
                 form_name_label: 'Full name',
                 form_name_placeholder: 'Your full name',
                 form_company_label: 'Company name',
@@ -303,7 +405,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 form_country_label: 'Buyer country',
                 form_country_placeholder: 'Vietnam / Thailand / Indonesia...',
                 form_product_label: 'Interested product',
-                form_product_option_0: 'Select a product',
+                form_product_placeholder: 'Select one or more products',
+                form_product_helper: 'Click to open and select multiple products.',
+                form_product_required: 'Please select at least one product.',
                 form_product_option_1: 'Eco Bamboo Fiber Flower Pots',
                 form_product_option_2: 'Self-Watering Ceramic Planters',
                 form_product_option_3: 'Stackable Nursery Tray Sets',
@@ -350,12 +454,12 @@ document.addEventListener('DOMContentLoaded', function () {
             strings: {
                 floating_whatsapp: 'WhatsApp咨询',
                 nav_products: '产品系列',
-                nav_factory: '工厂背书',
+                nav_factory: '资质与条款',
                 nav_services: 'OEM与出口服务',
                 nav_reviews: '客户反馈',
                 nav_contact: '联系我们',
                 nav_products_mobile: '产品系列',
-                nav_factory_mobile: '工厂背书',
+                nav_factory_mobile: '资质与条款',
                 nav_services_mobile: 'OEM与出口服务',
                 nav_reviews_mobile: '客户反馈',
                 nav_contact_mobile: '联系我们',
@@ -371,7 +475,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 hero_highlight_1: '支持工厂源头采购',
                 hero_highlight_2: 'MOQ与包装方案可配',
                 hero_highlight_3: 'WhatsApp快速回复',
-                hero_cta_primary: '申请批发报价',
+                hero_cta_primary: '获取批发报价',
                 hero_cta_secondary: 'WhatsApp洽谈',
                 hero_stat_1: '出口经验',
                 hero_stat_2: '目标市场',
@@ -393,16 +497,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 proof_card_2_item_1: '如有可补充 BSCI / Sedex / ISO',
                 proof_card_2_item_2: '如适用可补充 ROHS / REACH / 食品接触说明',
                 proof_card_2_item_3: '补充包装与纸箱测试信息',
-                proof_card_3_title: '出口能力栏位',
-                proof_card_3_desc: '展示交期、装运港口与出货执行能力。',
+                proof_card_3_title: '出口条款与交付',
+                proof_card_3_desc: '直接展示样品交期、大货交期与常用装运港口，方便买家快速评估。',
                 proof_card_3_item_1: '主要港口：深圳 / 广州 / 厦门',
-                proof_card_3_item_2: '样品交期：更新真实天数',
-                proof_card_3_item_3: '大货交期：更新真实天数',
+                proof_card_3_item_2: '样品交期：5-7天（参考）',
+                proof_card_3_item_3: '大货交期：定金后20-35天（参考）',
                 proof_card_4_title: '社会证明栏位',
                 proof_card_4_desc: '为真实买家案例、装柜照片与终端陈列留出位置。',
                 proof_card_4_item_1: '按国家展示重点买家案例',
                 proof_card_4_item_2: '展示贴牌包装示例',
                 proof_card_4_item_3: '放入买家评价截图或视频',
+                trust_assets_title: '首次沟通就能发送给买家的信任资料',
+                trust_assets_desc: '把这一区作为首轮回复清单，帮助进口买家快速核验合规能力、出货稳定性和项目匹配度。',
+                trust_doc_title: '合规文件包',
+                trust_doc_item_1: '公司介绍、产品目录与工厂实拍PDF',
+                trust_doc_item_2: 'BSCI / Sedex / ISO及相关测试报告（如有）',
+                trust_doc_item_3: '包装规格表与纸箱跌落测试摘要',
+                trust_doc_cta: '索取合规文件',
+                trust_shipping_title: '出货与交期资料',
+                trust_shipping_item_1: '按国家和品类展示近期出货参考',
+                trust_shipping_item_2: '按淡旺季展示样品与大货交期基准',
+                trust_shipping_item_3: '主要装运港口与Incoterms支持范围',
+                trust_shipping_cta: '索取出货资料',
+                trust_case_title: '买家案例快照',
+                trust_case_item_1: 'OEM Logo与贴牌包装案例',
+                trust_case_item_2: '终端陈列照片与项目落地照片',
+                trust_case_item_3: '从打样到首柜出货的周期案例',
+                trust_case_cta: '获取买家案例包',
                 quick_1_title: 'WhatsApp销售',
                 quick_1_cta: '立即沟通',
                 quick_2_title: '电话支持',
@@ -507,15 +628,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 review_3_location: '新加坡',
                 review_3_text: '“独立站一旦补齐真实认证文件、案例图片与准确交期，转化通常会明显更好。”',
                 review_3_product: '案例栏位：合规与出口支持',
+                faq_title: 'OEM花盆采购FAQ：MOQ、交期与出口条款',
+                faq_desc: '面向进口买家的实用问答，重点覆盖 OEM 花盆、贴牌合作、MOQ 政策与大货交期。',
+                faq_q1: 'OEM花盆和贴牌订单的 MOQ 是多少？',
+                faq_a1: 'MOQ 取决于产品品类和定制深度。多数标准款通常从 50-500 件起，若涉及 OEM Logo 和定制包装，通常需要更高起订量以保证单价稳定。',
+                faq_q2: '样品交期和大货交期通常多久？',
+                faq_a2: '标准选项样品交期通常为 5-10 天。大货交期一般为定金到账并确认稿件后 20-35 天，旺季建议预留额外缓冲。',
+                faq_q3: '是否支持 OEM Logo、定制颜色和品牌包装？',
+                faq_a3: '支持。我们可提供 OEM Logo、定制配色、条码标签、内卡及零售外箱。最终可行性取决于具体产品线、数量与目标出货周期。',
+                faq_q4: '可支持哪些 Incoterms 和目的港？',
+                faq_a4: '常用贸易条款包括 FOB、CIF，可配合东南亚主要目的港安排出货。建议尽早提供目的港和时间节点，以加快运费与报价确认。',
+                faq_q5: '要快速拿到准确批发报价，需要提供哪些信息？',
+                faq_a5: '建议提供产品类型、数量、OEM需求、目的港、目标交付月份和包装标准。RFQ 信息越完整，越有利于我们在 24 个工作小时内给出精准报价。',
                 contact_title: '获取批发报价',
                 contact_desc: '询盘表单已补充B2B采购常见字段：公司、国家、OEM需求、目的港与交付时间。',
-                contact_info_1_title: '工厂地址栏位',
-                contact_info_1_desc: '请替换为真实生产基地、样品间与最近出口港口信息。',
+                contact_info_1_title: '工厂与出货基地',
+                contact_info_1_desc: '上海团队支持对接，中国工厂协同生产，常规从华南主要港口安排出口。',
                 contact_info_2_title: '销售联系方式',
-                contact_info_3_title: '邮箱栏位',
-                contact_info_3_desc: '如有需要可替换为真实外贸业务邮箱。',
-                contact_info_4_title: '买家关心信息栏位',
-                contact_info_4_desc: '建议在此补充MOQ政策、样品政策、贸易条款与付款条件。',
+                contact_info_3_title: '业务邮箱',
+                contact_info_3_desc: '可通过邮箱发送RFQ、BOM和包装要求，便于更快给出准确报价。',
+                contact_info_4_title: '买家政策速览',
+                contact_info_4_desc: '常见条款：按SKU设MOQ、样品费可在大货中抵扣、支持FOB/CIF、付款方式30/70 TT。',
                 form_name_label: '姓名',
                 form_name_placeholder: '请输入姓名',
                 form_company_label: '公司名称',
@@ -527,7 +660,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 form_country_label: '采购国家',
                 form_country_placeholder: '如 越南 / 泰国 / 印尼',
                 form_product_label: '感兴趣产品',
-                form_product_option_0: '请选择产品',
+                form_product_placeholder: '请选择一个或多个产品',
+                form_product_helper: '点击下拉可多选产品。',
+                form_product_required: '请至少选择一个感兴趣产品。',
                 form_product_option_1: '环保竹纤维花盆',
                 form_product_option_2: '自动浇水陶瓷花盆',
                 form_product_option_3: '可堆叠育苗盘套装',
@@ -574,12 +709,12 @@ document.addEventListener('DOMContentLoaded', function () {
             strings: {
                 floating_whatsapp: 'Tu van WhatsApp',
                 nav_products: 'San pham',
-                nav_factory: 'Ho so nha may',
+                nav_factory: 'Ho so & dieu khoan',
                 nav_services: 'OEM va xuat khau',
                 nav_reviews: 'Phan hoi nguoi mua',
                 nav_contact: 'Lien he',
                 nav_products_mobile: 'San pham',
-                nav_factory_mobile: 'Ho so nha may',
+                nav_factory_mobile: 'Ho so & dieu khoan',
                 nav_services_mobile: 'OEM va xuat khau',
                 nav_reviews_mobile: 'Phan hoi nguoi mua',
                 nav_contact_mobile: 'Lien he',
@@ -595,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 hero_highlight_1: 'Ho tro tim nguon tu nha may',
                 hero_highlight_2: 'Co phuong an MOQ va dong goi',
                 hero_highlight_3: 'Phan hoi nhanh tren WhatsApp',
-                hero_cta_primary: 'Yeu cau bao gia si',
+                hero_cta_primary: 'Nhan bao gia si',
                 hero_cta_secondary: 'Trao doi qua WhatsApp',
                 hero_stat_1: 'Nam kinh nghiem xuat khau',
                 hero_stat_2: 'Thi truong muc tieu',
@@ -617,16 +752,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 proof_card_2_item_1: 'Them BSCI / Sedex / ISO neu co',
                 proof_card_2_item_2: 'Them ROHS / REACH / ghi chu an toan neu phu hop',
                 proof_card_2_item_3: 'Them thong tin kiem tra bao bi va carton',
-                proof_card_3_title: 'Nang luc xuat khau',
-                proof_card_3_desc: 'Hien thi lead time, cang xuat va kha nang xu ly van chuyen.',
+                proof_card_3_title: 'Dieu khoan xuat khau va giao hang',
+                proof_card_3_desc: 'Cong bo ro lead time mau, lead time don lon, va cang xuat thuong dung de nguoi mua danh gia nhanh.',
                 proof_card_3_item_1: 'Cang chinh: Shenzhen / Guangzhou / Xiamen',
-                proof_card_3_item_2: 'Thoi gian mau: cap nhat so ngay thuc',
-                proof_card_3_item_3: 'Thoi gian don lon: cap nhat so ngay thuc',
+                proof_card_3_item_2: 'Thoi gian mau: 5-7 ngay (tham chieu)',
+                proof_card_3_item_3: 'Thoi gian don lon: 20-35 ngay sau dat coc (tham chieu)',
                 proof_card_4_title: 'Bang chung thi truong',
                 proof_card_4_desc: 'De cho case study thuc te, anh dong container va hinh trung bay tai diem ban.',
                 proof_card_4_item_1: 'Case study theo tung quoc gia',
                 proof_card_4_item_2: 'Vi du dong goi nhan rieng',
                 proof_card_4_item_3: 'Anh chup danh gia hoac video tu nguoi mua',
+                trust_assets_title: 'Bo tai lieu uy tin de gui cho nguoi mua ngay lan lien he dau',
+                trust_assets_desc: 'Dung khu nay nhu checklist phan hoi dau tien de nguoi mua nhap khau nhanh chong kiem tra tuan thu, do on dinh giao hang va do phu hop du an.',
+                trust_doc_title: 'Bo tai lieu tuan thu',
+                trust_doc_item_1: 'Ho so cong ty, catalog san pham va anh nha may dang PDF',
+                trust_doc_item_2: 'BSCI / Sedex / ISO va mot so bao cao test (neu co)',
+                trust_doc_item_3: 'Bang thong so dong goi va tom tat test roi thung carton',
+                trust_doc_cta: 'Yeu cau bo tai lieu tuan thu',
+                trust_shipping_title: 'Tai lieu giao hang va lead time',
+                trust_shipping_item_1: 'Tham chieu lo hang gan day theo quoc gia va nhom san pham',
+                trust_shipping_item_2: 'Moc lead time mau va don lon theo mua cao diem / thap diem',
+                trust_shipping_item_3: 'Pham vi ho tro cang xuat chinh va Incoterms',
+                trust_shipping_cta: 'Yeu cau tai lieu giao hang',
+                trust_case_title: 'Tom tat case nguoi mua',
+                trust_case_item_1: 'Vi du OEM logo va dong goi nhan rieng',
+                trust_case_item_2: 'Anh trung bay ban le va anh lap dat du an',
+                trust_case_item_3: 'Vi du chu ky don hang: tu mau den container dau tien',
+                trust_case_cta: 'Nhan bo case nguoi mua',
                 quick_1_title: 'WhatsApp kinh doanh',
                 quick_1_cta: 'Bat dau chat',
                 quick_2_title: 'Ho tro dien thoai',
@@ -731,15 +883,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 review_3_location: 'Singapore',
                 review_3_text: '“Trang web doc lap se chuyen doi tot hon khi co file tuan thu that, anh du an va lead time chinh xac.”',
                 review_3_product: 'Vi tri tham chieu: ho tro tuan thu va xuat khau',
+                faq_title: 'FAQ OEM Chau Cay: MOQ, Lead Time va Dieu Khoan Xuat Khau',
+                faq_desc: 'Cau tra loi thuc te cho nguoi mua nhap khau ve chau cay OEM, nhan rieng, chinh sach MOQ va lead time don lon.',
+                faq_q1: 'MOQ cho don chau cay OEM va nhan rieng la bao nhieu?',
+                faq_a1: 'MOQ phu thuoc vao nhom san pham va muc do tuy chinh. Da so SKU tieu chuan bat dau tu 50-500 pcs, trong khi du an logo OEM va bao bi rieng thuong can so luong cao hon de on dinh don gia.',
+                faq_q2: 'Lead time lam mau va lead time san xuat don lon bao lau?',
+                faq_a2: 'Lead time lam mau thuong 5-10 ngay cho lua chon tieu chuan. Don lon thuong 20-35 ngay sau khi dat coc va chot artwork, va nen co them buffer vao mua cao diem.',
+                faq_q3: 'Ban co ho tro logo OEM, mau sac tuy chinh va bao bi thuong hieu khong?',
+                faq_a3: 'Co. Chung toi ho tro in logo OEM, mau tuy chinh, tem barcode, insert card va carton san sang cho ban le. Tinh kha thi cuoi cung phu thuoc vao dong san pham, so luong va lich giao hang.',
+                faq_q4: 'Ban ho tro Incoterms nao va cang dich nao?',
+                faq_a4: 'Dieu khoan pho bien gom FOB va CIF, va chung toi co the sap xep giao hang den cac cang chinh tai Dong Nam A. Cung cap som cang dich va timeline se giup chot gia nhanh hon.',
+                faq_q5: 'Can thong tin gi de nhan bao gia ban si chinh xac nhanh nhat?',
+                faq_a5: 'Vui long cung cap loai san pham, so luong, nhu cau OEM, cang dich, thang giao hang muc tieu va tieu chuan dong goi. RFQ day du giup chung toi phan hoi bao gia chinh xac trong 24 gio lam viec.',
                 contact_title: 'Yeu cau bao gia si',
                 contact_desc: 'Bieu mau inquiry da giu cac truong ma nguoi mua B2B thuong can: cong ty, quoc gia, OEM, cang dich va thoi diem giao hang.',
-                contact_info_1_title: 'Cho dia chi nha may',
-                contact_info_1_desc: 'Cap nhat dia diem san xuat, showroom mau va cang xuat khau gan nhat.',
+                contact_info_1_title: 'Nha may va diem xuat hang',
+                contact_info_1_desc: 'Ho tro tu van tu van phong Thuong Hai, phoi hop san xuat tai Trung Quoc, va xuat qua cac cang lon mien Nam.',
                 contact_info_2_title: 'Thong tin kinh doanh',
-                contact_info_3_title: 'Cho email',
-                contact_info_3_desc: 'Co the thay bang email xuat khau thuc te cua doi sales.',
-                contact_info_4_title: 'Cho thong tin nguoi mua quan tam',
-                contact_info_4_desc: 'Nen bo sung chinh sach MOQ, chinh sach mau, Incoterms va dieu khoan thanh toan.',
+                contact_info_3_title: 'Email kinh doanh',
+                contact_info_3_desc: 'Gui RFQ, BOM, va yeu cau dong goi qua email de nhan bao gia nhanh va chinh xac hon.',
+                contact_info_4_title: 'Tom tat chinh sach mua hang',
+                contact_info_4_desc: 'Dieu khoan tham chieu: MOQ theo SKU, phi mau duoc tru vao don lon, ho tro FOB/CIF, thanh toan 30/70 TT.',
                 form_name_label: 'Ho ten',
                 form_name_placeholder: 'Nhap ho ten day du',
                 form_company_label: 'Ten cong ty',
@@ -751,7 +915,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 form_country_label: 'Quoc gia nguoi mua',
                 form_country_placeholder: 'Viet Nam / Thai Lan / Indonesia...',
                 form_product_label: 'San pham quan tam',
-                form_product_option_0: 'Chon san pham',
+                form_product_placeholder: 'Chon mot hoac nhieu san pham',
+                form_product_helper: 'Bam de mo danh sach va chon nhieu san pham.',
+                form_product_required: 'Vui long chon it nhat mot san pham.',
                 form_product_option_1: 'Chau Hoa Soi Tre Than Thien Moi Truong',
                 form_product_option_2: 'Chau Gom Tuoi Tu Dong',
                 form_product_option_3: 'Bo Khay Uom Co The Xep Chong',
@@ -798,12 +964,12 @@ document.addEventListener('DOMContentLoaded', function () {
             strings: {
                 floating_whatsapp: 'สอบถามทาง WhatsApp',
                 nav_products: 'สินค้า',
-                nav_factory: 'ข้อมูลโรงงาน',
+                nav_factory: 'ข้อมูลโรงงานและเงื่อนไข',
                 nav_services: 'OEM และส่งออก',
                 nav_reviews: 'เสียงตอบรับ',
                 nav_contact: 'ติดต่อ',
                 nav_products_mobile: 'สินค้า',
-                nav_factory_mobile: 'ข้อมูลโรงงาน',
+                nav_factory_mobile: 'ข้อมูลโรงงานและเงื่อนไข',
                 nav_services_mobile: 'OEM และส่งออก',
                 nav_reviews_mobile: 'เสียงตอบรับ',
                 nav_contact_mobile: 'ติดต่อ',
@@ -819,7 +985,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 hero_highlight_1: 'ช่วยประสานงานจากโรงงานต้นทาง',
                 hero_highlight_2: 'มีทางเลือกด้าน MOQ และบรรจุภัณฑ์',
                 hero_highlight_3: 'ตอบกลับ WhatsApp รวดเร็ว',
-                hero_cta_primary: 'ขอราคาขายส่ง',
+                hero_cta_primary: 'ขอใบเสนอราคาขายส่ง',
                 hero_cta_secondary: 'คุยผ่าน WhatsApp',
                 hero_stat_1: 'ประสบการณ์ส่งออก',
                 hero_stat_2: 'ตลาดเป้าหมาย',
@@ -841,16 +1007,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 proof_card_2_item_1: 'เพิ่ม BSCI / Sedex / ISO หากมี',
                 proof_card_2_item_2: 'เพิ่ม ROHS / REACH / ข้อมูลความปลอดภัยหากเกี่ยวข้อง',
                 proof_card_2_item_3: 'เพิ่มข้อมูลทดสอบบรรจุภัณฑ์และกล่อง',
-                proof_card_3_title: 'ความสามารถด้านส่งออก',
-                proof_card_3_desc: 'แสดง lead time ท่าเรือส่งออก และความพร้อมด้านโลจิสติกส์',
+                proof_card_3_title: 'เงื่อนไขส่งออกและกำหนดส่งมอบ',
+                proof_card_3_desc: 'แสดง lead time ตัวอย่าง, lead time ออเดอร์ใหญ่ และท่าเรือส่งออกหลักอย่างชัดเจน',
                 proof_card_3_item_1: 'ท่าเรือหลัก: Shenzhen / Guangzhou / Xiamen',
-                proof_card_3_item_2: 'ระยะเวลาทำตัวอย่าง: อัปเดตจำนวนวันจริง',
-                proof_card_3_item_3: 'ระยะเวลาผลิตล็อตใหญ่: อัปเดตจำนวนวันจริง',
+                proof_card_3_item_2: 'ระยะเวลาทำตัวอย่าง: 5-7 วัน (อ้างอิง)',
+                proof_card_3_item_3: 'ระยะเวลาผลิตล็อตใหญ่: 20-35 วันหลังมัดจำ (อ้างอิง)',
                 proof_card_4_title: 'หลักฐานทางตลาด',
                 proof_card_4_desc: 'เว้นพื้นที่สำหรับเคสลูกค้าจริง รูปบรรจุตู้ และภาพวางขายหน้าร้าน',
                 proof_card_4_item_1: 'กรณีศึกษาตามประเทศ',
                 proof_card_4_item_2: 'ตัวอย่างบรรจุภัณฑ์แบบแบรนด์ลูกค้า',
                 proof_card_4_item_3: 'ภาพหน้าจอรีวิวหรือวิดีโอจากผู้ซื้อ',
+                trust_assets_title: 'ชุดเอกสารความน่าเชื่อถือที่ส่งให้ผู้ซื้อได้ตั้งแต่ครั้งแรก',
+                trust_assets_desc: 'ใช้ส่วนนี้เป็นเช็กลิสต์ตอบกลับรอบแรก เพื่อให้ผู้นำเข้าตรวจสอบความพร้อมด้านเอกสาร การจัดส่ง และความเหมาะสมของโปรเจกต์ได้เร็วขึ้น',
+                trust_doc_title: 'ชุดเอกสารการรับรอง',
+                trust_doc_item_1: 'โปรไฟล์บริษัท แคตตาล็อกสินค้า และรูปโรงงานแบบ PDF',
+                trust_doc_item_2: 'BSCI / Sedex / ISO และรายงานทดสอบที่เกี่ยวข้อง (ถ้ามี)',
+                trust_doc_item_3: 'สเปกบรรจุภัณฑ์และสรุปผลทดสอบตกกล่อง',
+                trust_doc_cta: 'ขอเอกสารการรับรอง',
+                trust_shipping_title: 'ข้อมูลการจัดส่งและระยะเวลา',
+                trust_shipping_item_1: 'ตัวอย่างการส่งออกล่าสุดตามประเทศและหมวดสินค้า',
+                trust_shipping_item_2: 'เกณฑ์ lead time สำหรับตัวอย่างและออเดอร์ใหญ่ตามฤดูกาล',
+                trust_shipping_item_3: 'ท่าเรือหลักและขอบเขต Incoterms ที่รองรับ',
+                trust_shipping_cta: 'ขอข้อมูลการจัดส่ง',
+                trust_case_title: 'สรุปเคสลูกค้า',
+                trust_case_item_1: 'ตัวอย่าง OEM โลโก้และแพ็กกิ้งแบรนด์ลูกค้า',
+                trust_case_item_2: 'ภาพวางขายหน้าร้านและภาพติดตั้งหน้างาน',
+                trust_case_item_3: 'ตัวอย่างรอบคำสั่งซื้อ: จากทำตัวอย่างถึงตู้แรก',
+                trust_case_cta: 'รับชุดเคสลูกค้า',
                 quick_1_title: 'ฝ่ายขาย WhatsApp',
                 quick_1_cta: 'เริ่มแชต',
                 quick_2_title: 'โทรสอบถาม',
@@ -955,15 +1138,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 review_3_location: 'สิงคโปร์',
                 review_3_text: '“เว็บไซต์อิสระจะมีคอนเวอร์ชันดีขึ้นชัดเจน เมื่อมีไฟล์รับรองจริง รูปเคสงาน และ lead time ที่ตรงจริง”',
                 review_3_product: 'ช่องอ้างอิง: การรับรองและการส่งออก',
+                faq_title: 'FAQ กระถาง OEM: MOQ, Lead Time และเงื่อนไขส่งออก',
+                faq_desc: 'คำตอบที่ใช้งานได้จริงสำหรับผู้นำเข้าเกี่ยวกับกระถาง OEM, private label, นโยบาย MOQ และ lead time ออเดอร์ใหญ่',
+                faq_q1: 'MOQ สำหรับคำสั่งซื้อกระถาง OEM และ private label เท่าไร?',
+                faq_a1: 'MOQ ขึ้นกับประเภทสินค้าและระดับการปรับแต่ง โดยทั่วไปสินค้ามาตรฐานเริ่มที่ 50-500 ชิ้น ส่วนงานที่มีโลโก้ OEM และแพ็กเกจเฉพาะแบรนด์มักต้องใช้ปริมาณสูงกว่าเพื่อให้ต้นทุนต่อชิ้นคงที่',
+                faq_q2: 'ระยะเวลาทำตัวอย่างและผลิตล็อตใหญ่ใช้กี่วัน?',
+                faq_a2: 'ตัวอย่างมาตรฐานมักใช้ 5-10 วัน ส่วนออเดอร์ล็อตใหญ่โดยทั่วไปใช้ 20-35 วันหลังรับมัดจำและยืนยันอาร์ตเวิร์ก โดยช่วงพีกซีซันควรเผื่อเวลาเพิ่ม',
+                faq_q3: 'รองรับโลโก้ OEM, สีพิเศษ และแพ็กเกจแบรนด์ลูกค้าหรือไม่?',
+                faq_a3: 'รองรับ เราสามารถทำโลโก้ OEM, โทนสีเฉพาะ, บาร์โค้ด, การ์ดแทรก และกล่องพร้อมขายปลีกได้ ทั้งนี้ความเป็นไปได้สุดท้ายขึ้นกับไลน์สินค้า ปริมาณ และกำหนดส่ง',
+                faq_q4: 'รองรับ Incoterms และปลายทางท่าเรือใดบ้าง?',
+                faq_a4: 'เงื่อนไขที่ใช้บ่อยคือ FOB และ CIF และเราสามารถวางแผนส่งออกไปท่าเรือหลักในเอเชียตะวันออกเฉียงใต้ได้ การแจ้งปลายทางและ timeline ตั้งแต่ต้นจะช่วยให้ยืนยันค่าขนส่งและราคาได้เร็วขึ้น',
+                faq_q5: 'ต้องให้ข้อมูลอะไรเพื่อได้ใบเสนอราคาขายส่งที่แม่นยำเร็วที่สุด?',
+                faq_a5: 'โปรดแจ้งประเภทสินค้า ปริมาณ ความต้องการ OEM ท่าเรือปลายทาง เดือนส่งมอบเป้าหมาย และมาตรฐานแพ็กกิ้ง ยิ่ง RFQ ครบถ้วน เรายิ่งเสนอราคาแม่นยำได้ภายใน 24 ชั่วโมงทำการ',
                 contact_title: 'ขอใบเสนอราคาขายส่ง',
                 contact_desc: 'แบบฟอร์ม inquiry ได้เพิ่มช่องที่ผู้ซื้อ B2B ใช้จริง เช่น บริษัท ประเทศ OEM ท่าเรือปลายทาง และช่วงเวลาส่งมอบ',
-                contact_info_1_title: 'ช่องใส่ที่อยู่โรงงาน',
-                contact_info_1_desc: 'อัปเดตด้วยฐานการผลิตจริง โชว์รูมตัวอย่าง และท่าเรือส่งออกที่ใกล้ที่สุด',
+                contact_info_1_title: 'โรงงานและฐานจัดส่ง',
+                contact_info_1_desc: 'ทีมซัพพอร์ตที่เซี่ยงไฮ้ ประสานงานโรงงานในจีน และส่งออกผ่านท่าเรือหลักทางตอนใต้ของจีน',
                 contact_info_2_title: 'ช่องทางฝ่ายขาย',
-                contact_info_3_title: 'ช่องใส่อีเมล',
-                contact_info_3_desc: 'หากต้องการสามารถเปลี่ยนเป็นอีเมลฝ่ายขายส่งออกจริงได้',
-                contact_info_4_title: 'ช่องข้อมูลที่ผู้ซื้ออยากเห็น',
-                contact_info_4_desc: 'แนะนำให้เพิ่มนโยบาย MOQ นโยบายตัวอย่าง Incoterms และเงื่อนไขการชำระเงิน',
+                contact_info_3_title: 'อีเมลธุรกิจ',
+                contact_info_3_desc: 'ส่ง RFQ, BOM และข้อกำหนดแพ็กกิ้งทางอีเมลเพื่อให้เสนอราคาได้เร็วและแม่นยำขึ้น',
+                contact_info_4_title: 'สรุปนโยบายสำหรับผู้ซื้อ',
+                contact_info_4_desc: 'เงื่อนไขทั่วไป: MOQ ตาม SKU, ค่าตัวอย่างหักคืนได้เมื่อสั่งล็อตใหญ่, รองรับ FOB/CIF, ชำระเงินแบบ 30/70 TT',
                 form_name_label: 'ชื่อผู้ติดต่อ',
                 form_name_placeholder: 'กรอกชื่อเต็ม',
                 form_company_label: 'ชื่อบริษัท',
@@ -975,7 +1170,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 form_country_label: 'ประเทศผู้ซื้อ',
                 form_country_placeholder: 'เวียดนาม / ไทย / อินโดนีเซีย...',
                 form_product_label: 'สินค้าที่สนใจ',
-                form_product_option_0: 'เลือกสินค้า',
+                form_product_placeholder: 'เลือกสินค้าได้มากกว่าหนึ่งรายการ',
+                form_product_helper: 'คลิกเพื่อเปิดรายการและเลือกได้หลายสินค้า',
+                form_product_required: 'กรุณาเลือกอย่างน้อยหนึ่งสินค้า',
                 form_product_option_1: 'กระถางดอกไม้ใยไผ่รักษ์โลก',
                 form_product_option_2: 'กระถางเซรามิกรดน้ำอัตโนมัติ',
                 form_product_option_3: 'ชุดถาดเพาะกล้าแบบซ้อนได้',
@@ -1022,12 +1219,12 @@ document.addEventListener('DOMContentLoaded', function () {
             strings: {
                 floating_whatsapp: 'Konsultasi WhatsApp',
                 nav_products: 'Produk',
-                nav_factory: 'Bukti pabrik',
+                nav_factory: 'Bukti pabrik & ketentuan',
                 nav_services: 'OEM & ekspor',
                 nav_reviews: 'Ulasan pembeli',
                 nav_contact: 'Kontak',
                 nav_products_mobile: 'Produk',
-                nav_factory_mobile: 'Bukti pabrik',
+                nav_factory_mobile: 'Bukti pabrik & ketentuan',
                 nav_services_mobile: 'OEM & ekspor',
                 nav_reviews_mobile: 'Ulasan pembeli',
                 nav_contact_mobile: 'Kontak',
@@ -1043,7 +1240,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 hero_highlight_1: 'Dukungan sourcing langsung dari pabrik',
                 hero_highlight_2: 'Pilihan MOQ dan kemasan',
                 hero_highlight_3: 'Respons cepat via WhatsApp',
-                hero_cta_primary: 'Minta harga grosir',
+                hero_cta_primary: 'Minta penawaran grosir',
                 hero_cta_secondary: 'Chat via WhatsApp',
                 hero_stat_1: 'Tahun pengalaman ekspor',
                 hero_stat_2: 'Pasar target',
@@ -1065,16 +1262,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 proof_card_2_item_1: 'Tambahkan BSCI / Sedex / ISO bila tersedia',
                 proof_card_2_item_2: 'Tambahkan ROHS / REACH / catatan keamanan bila relevan',
                 proof_card_2_item_3: 'Tambahkan detail uji kemasan dan karton',
-                proof_card_3_title: 'Kemampuan ekspor',
-                proof_card_3_desc: 'Tampilkan lead time, pelabuhan muat, dan kemampuan penanganan pengiriman.',
+                proof_card_3_title: 'Ketentuan ekspor dan pengiriman',
+                proof_card_3_desc: 'Tampilkan jelas lead time sampel, lead time produksi massal, dan pelabuhan muat utama.',
                 proof_card_3_item_1: 'Pelabuhan utama: Shenzhen / Guangzhou / Xiamen',
-                proof_card_3_item_2: 'Lead time sampel: perbarui hari sebenarnya',
-                proof_card_3_item_3: 'Lead time produksi massal: perbarui hari sebenarnya',
+                proof_card_3_item_2: 'Lead time sampel: 5-7 hari (referensi)',
+                proof_card_3_item_3: 'Lead time produksi massal: 20-35 hari setelah DP (referensi)',
                 proof_card_4_title: 'Bukti sosial',
                 proof_card_4_desc: 'Sisakan ruang untuk studi kasus pembeli asli, foto stuffing container, dan tampilan produk di toko.',
                 proof_card_4_item_1: 'Studi kasus pasar utama per negara',
                 proof_card_4_item_2: 'Contoh kemasan private label',
                 proof_card_4_item_3: 'Screenshot testimoni atau video pembeli',
+                trust_assets_title: 'Dokumen kepercayaan yang bisa Anda kirim di kontak pertama',
+                trust_assets_desc: 'Gunakan bagian ini sebagai checklist balasan awal agar importir cepat memverifikasi kepatuhan, keandalan pengiriman, dan kecocokan proyek.',
+                trust_doc_title: 'Paket dokumen kepatuhan',
+                trust_doc_item_1: 'Profil perusahaan, katalog produk, dan foto pabrik dalam PDF',
+                trust_doc_item_2: 'BSCI / Sedex / ISO serta laporan uji terpilih (jika tersedia)',
+                trust_doc_item_3: 'Lembar spesifikasi kemasan dan ringkasan uji jatuh karton',
+                trust_doc_cta: 'Minta dokumen kepatuhan',
+                trust_shipping_title: 'Catatan pengiriman dan lead time',
+                trust_shipping_item_1: 'Referensi pengiriman terbaru per negara dan kategori produk',
+                trust_shipping_item_2: 'Patokan lead time sampel dan massal per musim',
+                trust_shipping_item_3: 'Pelabuhan muat utama dan cakupan dukungan Incoterms',
+                trust_shipping_cta: 'Minta data pengiriman',
+                trust_case_title: 'Snapshot kasus pembeli',
+                trust_case_item_1: 'Contoh OEM logo dan kemasan private label',
+                trust_case_item_2: 'Foto rak retail dan foto instalasi proyek',
+                trust_case_item_3: 'Contoh siklus order: dari sampel hingga kontainer pertama',
+                trust_case_cta: 'Dapatkan paket kasus pembeli',
                 quick_1_title: 'Sales WhatsApp',
                 quick_1_cta: 'Mulai chat',
                 quick_2_title: 'Dukungan telepon',
@@ -1179,15 +1393,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 review_3_location: 'Singapura',
                 review_3_text: '“Situs independen akan mengonversi lebih baik setelah file kepatuhan nyata, foto kasus, dan lead time yang akurat terlihat jelas.”',
                 review_3_product: 'Slot referensi: dukungan kepatuhan dan ekspor',
+                faq_title: 'FAQ Pot OEM: MOQ, Lead Time, dan Ketentuan Ekspor',
+                faq_desc: 'Jawaban praktis untuk importir yang mengevaluasi pot OEM, private label, kebijakan MOQ, dan lead time pengiriman massal.',
+                faq_q1: 'Berapa MOQ untuk pot OEM dan pesanan private label?',
+                faq_a1: 'MOQ bergantung pada jenis produk dan tingkat kustomisasi. Untuk sebagian besar SKU standar, MOQ mulai dari 50-500 pcs. Untuk proyek logo OEM dan kemasan khusus biasanya membutuhkan volume lebih tinggi agar harga stabil.',
+                faq_q2: 'Berapa lama lead time sampel dan produksi massal?',
+                faq_a2: 'Lead time sampel biasanya 5-10 hari untuk opsi standar. Lead time produksi massal umumnya 20-35 hari setelah DP dan konfirmasi artwork, dengan buffer tambahan saat musim puncak.',
+                faq_q3: 'Apakah mendukung logo OEM, warna khusus, dan kemasan bermerek?',
+                faq_a3: 'Ya. Kami mendukung cetak logo OEM, program warna khusus, label barcode, insert card, dan karton siap retail. Kelayakan akhir bergantung pada lini produk, jumlah, dan target jadwal kirim.',
+                faq_q4: 'Incoterms dan pelabuhan tujuan apa saja yang bisa didukung?',
+                faq_a4: 'Ketentuan umum meliputi FOB dan CIF, dan kami dapat menyesuaikan rencana pengiriman untuk pelabuhan utama Asia Tenggara. Berikan pelabuhan tujuan dan timeline lebih awal agar konfirmasi freight dan harga lebih cepat.',
+                faq_q5: 'Informasi apa yang dibutuhkan agar cepat mendapat penawaran grosir yang akurat?',
+                faq_a5: 'Mohon berikan jenis produk, jumlah, kebutuhan OEM, pelabuhan tujuan, bulan target pengiriman, dan standar kemasan. RFQ yang lengkap membantu kami mengirim penawaran akurat dalam 24 jam kerja.',
                 contact_title: 'Minta penawaran grosir',
                 contact_desc: 'Form inquiry kini menyiapkan kolom praktis yang biasa dibutuhkan pembeli B2B: perusahaan, negara, OEM, pelabuhan tujuan, dan target waktu pengiriman.',
-                contact_info_1_title: 'Slot alamat pabrik',
-                contact_info_1_desc: 'Perbarui dengan basis produksi, showroom sampel, dan pelabuhan ekspor terdekat Anda.',
+                contact_info_1_title: 'Pabrik dan basis pengiriman',
+                contact_info_1_desc: 'Dukungan tim Shanghai, koordinasi produksi pabrik di China, dan ekspor via pelabuhan utama China Selatan.',
                 contact_info_2_title: 'Kontak sales',
-                contact_info_3_title: 'Slot email',
-                contact_info_3_desc: 'Ganti dengan alamat email ekspor nyata bila perlu.',
-                contact_info_4_title: 'Slot data penting bagi pembeli',
-                contact_info_4_desc: 'Tambahkan kebijakan MOQ, kebijakan sampel, Incoterms, dan syarat pembayaran di sini.',
+                contact_info_3_title: 'Email bisnis',
+                contact_info_3_desc: 'Kirim RFQ, file BOM, dan kebutuhan kemasan via email agar penawaran lebih cepat dan akurat.',
+                contact_info_4_title: 'Ringkasan kebijakan pembeli',
+                contact_info_4_desc: 'Ketentuan umum: MOQ per SKU, biaya sampel bisa dipotong saat order massal, dukungan FOB/CIF, pembayaran 30/70 TT.',
                 form_name_label: 'Nama lengkap',
                 form_name_placeholder: 'Nama lengkap Anda',
                 form_company_label: 'Nama perusahaan',
@@ -1199,7 +1425,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 form_country_label: 'Negara pembeli',
                 form_country_placeholder: 'Vietnam / Thailand / Indonesia...',
                 form_product_label: 'Produk yang diminati',
-                form_product_option_0: 'Pilih produk',
+                form_product_placeholder: 'Pilih satu atau beberapa produk',
+                form_product_helper: 'Klik untuk membuka daftar dan pilih beberapa produk.',
+                form_product_required: 'Pilih setidaknya satu produk.',
                 form_product_option_1: 'Pot Bunga Serat Bambu Ramah Lingkungan',
                 form_product_option_2: 'Planter Keramik Self-Watering',
                 form_product_option_3: 'Set Tray Semai Bertumpuk',
@@ -1247,6 +1475,36 @@ document.addEventListener('DOMContentLoaded', function () {
         const strings = bundle.strings || {};
         const fallbackStrings = fallback.strings || {};
 
+        function pick(key) {
+            return strings[key] || fallbackStrings[key] || '';
+        }
+
+        function updateFaqStructuredData() {
+            const faqScript = document.getElementById('faqStructuredData');
+            if (!faqScript) return;
+            const faqQuestions = [
+                { q: pick('faq_q1'), a: pick('faq_a1') },
+                { q: pick('faq_q2'), a: pick('faq_a2') },
+                { q: pick('faq_q3'), a: pick('faq_a3') },
+                { q: pick('faq_q4'), a: pick('faq_a4') },
+                { q: pick('faq_q5'), a: pick('faq_a5') }
+            ].filter((item) => item.q && item.a);
+
+            const faqJsonLd = {
+                '@context': 'https://schema.org',
+                '@type': 'FAQPage',
+                mainEntity: faqQuestions.map((item) => ({
+                    '@type': 'Question',
+                    name: item.q,
+                    acceptedAnswer: {
+                        '@type': 'Answer',
+                        text: item.a
+                    }
+                }))
+            };
+            faqScript.textContent = JSON.stringify(faqJsonLd);
+        }
+
         document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
         document.title = bundle.title || fallback.title;
         if (metaDescription) metaDescription.setAttribute('content', bundle.description || fallback.description);
@@ -1256,6 +1514,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const key = node.getAttribute('data-i18n');
             node.textContent = strings[key] || fallbackStrings[key] || node.textContent;
         });
+
+        const productTrigger = document.querySelector('[data-multi-select-trigger]');
+        if (productTrigger) {
+            productTrigger.dataset.placeholderText = pick('form_product_placeholder');
+        }
 
         document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
             const key = node.getAttribute('data-i18n-placeholder');
@@ -1269,6 +1532,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         applyHeroTitleVariant(lang);
         updateDetailPageLinks(lang);
+        updateFaqStructuredData();
+        updateProductMultiSelectDisplay();
 
         langButtons.forEach((button) => {
             button.classList.toggle('active', button.dataset.lang === lang);
@@ -1351,10 +1616,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    initProductMultiSelect();
+
     contactForm?.addEventListener('submit', async function (e) {
         e.preventDefault();
         const lang = localStorage.getItem('greensmart-lang') || 'en';
         const formData = new FormData(this);
+        const selectedProducts = formData.getAll('product').filter((item) => String(item || '').trim());
         const messages = {
             en: { sending: 'Sending...', sent: 'Inquiry sent', failed: 'Send failed, please try again.' },
             zh: { sending: '发送中...', sent: '询盘已提交', failed: '提交失败，请稍后重试。' },
@@ -1365,9 +1633,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const submitButton = this.querySelector('button[type="submit"]');
         const originalText = submitButton.textContent;
         const current = messages[lang] || messages.en;
+        if (!selectedProducts.length) {
+            productMultiSelect?.classList.add('is-invalid');
+            productMultiSelect?.classList.add('is-open');
+            const trigger = productMultiSelect?.querySelector('[data-multi-select-trigger]');
+            trigger?.setAttribute('aria-expanded', 'true');
+            trigger?.focus();
+            return;
+        }
         submitButton.disabled = true;
         submitButton.textContent = current.sending;
+        productMultiSelect?.classList.remove('is-invalid');
         const payload = Object.fromEntries(formData.entries());
+        payload.product = selectedProducts.join(',');
         payload.lang = lang;
         payload.source = 'website';
         payload.pageUrl = window.location.href;
@@ -1394,10 +1672,13 @@ document.addEventListener('DOMContentLoaded', function () {
             submitButton.style.backgroundColor = '#28a745';
             trackEvent('submit_inquiry_success', withTrackingMeta({
                 lang,
-                product: formData.get('product') || 'unknown',
+                product: selectedProducts.join('|') || 'unknown',
                 country: formData.get('country') || 'unknown'
             }));
             this.reset();
+            productMultiSelect?.classList.remove('is-open');
+            productMultiSelect?.querySelector('[data-multi-select-trigger]')?.setAttribute('aria-expanded', 'false');
+            updateProductMultiSelectDisplay();
         } catch (error) {
             submitButton.textContent = current.failed;
             submitButton.style.backgroundColor = '#dc2626';

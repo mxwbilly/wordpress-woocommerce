@@ -17,11 +17,22 @@ const statusFilter = document.getElementById('statusFilter');
 const countryFilter = document.getElementById('countryFilter');
 const productFilter = document.getElementById('productFilter');
 const keywordFilter = document.getElementById('keywordFilter');
+const rfqLevelFilter = document.getElementById('rfqLevelFilter');
+const priorityFilter = document.getElementById('priorityFilter');
+const slaFilter = document.getElementById('slaFilter');
+const sortBySelect = document.getElementById('sortBySelect');
 const applyFilterBtn = document.getElementById('applyFilterBtn');
 const clearFilterBtn = document.getElementById('clearFilterBtn');
 const summaryText = document.getElementById('summaryText');
 const detailsPanel = document.getElementById('detailsPanel');
 const detailMeta = document.getElementById('detailMeta');
+const rfqScoreText = document.getElementById('rfqScoreText');
+const priorityText = document.getElementById('priorityText');
+const slaText = document.getElementById('slaText');
+const rfqMissingList = document.getElementById('rfqMissingList');
+const buildReminderBtn = document.getElementById('buildReminderBtn');
+const copyReminderBtn = document.getElementById('copyReminderBtn');
+const reminderPreview = document.getElementById('reminderPreview');
 const detailMessage = document.getElementById('detailMessage');
 const detailStatusSelect = document.getElementById('detailStatusSelect');
 const detailAssigneeSelect = document.getElementById('detailAssigneeSelect');
@@ -41,6 +52,11 @@ const kpiTotal = document.getElementById('kpiTotal');
 const kpi7d = document.getElementById('kpi7d');
 const kpiQuoted = document.getElementById('kpiQuoted');
 const kpiWon = document.getElementById('kpiWon');
+const kpiPriorityHigh = document.getElementById('kpiPriorityHigh');
+const kpiSlaBreached = document.getElementById('kpiSlaBreached');
+const topCountriesList = document.getElementById('topCountriesList');
+const highIntentPagesList = document.getElementById('highIntentPagesList');
+const nextWeekPlanList = document.getElementById('nextWeekPlanList');
 const notifyEmailInput = document.getElementById('notifyEmailInput');
 const defaultAssigneeInput = document.getElementById('defaultAssigneeInput');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
@@ -51,6 +67,7 @@ let currentPage = 1;
 let totalItems = 0;
 let users = [];
 let currentUser = null;
+let selectedInquiry = null;
 
 const statusLabelMap = {
     new: '新建',
@@ -68,6 +85,20 @@ const productLabelMap = {
     balcony: '阳台菜园花箱',
     coir: '悬挂椰棕花篮',
     other: '其他/定制需求'
+};
+
+const rfqFieldLabelMap = {
+    name: '姓名',
+    email: '邮箱',
+    country: '国家',
+    company: '公司名称',
+    phone: '联系电话',
+    product: '产品',
+    quantity: '采购数量',
+    oem: 'OEM需求',
+    port: '目的港',
+    deadline: '交付时间',
+    message: '需求描述'
 };
 
 function setAuthState(loggedIn) {
@@ -111,6 +142,106 @@ function getProductLabel(product) {
     return productLabelMap[product] || product;
 }
 
+function hasText(value) {
+    return String(value || '').trim().length > 0;
+}
+
+function computeRfqCompleteness(item) {
+    const messageLength = String(item?.message || '').trim().length;
+    const rules = [
+        { key: 'name', weight: 8, pass: hasText(item?.contact?.name) },
+        { key: 'email', weight: 8, pass: hasText(item?.contact?.email) },
+        { key: 'country', weight: 8, pass: hasText(item?.contact?.country) },
+        { key: 'company', weight: 10, pass: hasText(item?.contact?.company) },
+        { key: 'phone', weight: 10, pass: hasText(item?.contact?.phone) },
+        { key: 'product', weight: 12, pass: hasText(item?.product) },
+        { key: 'quantity', weight: 10, pass: hasText(item?.quantity) },
+        { key: 'oem', weight: 6, pass: hasText(item?.oem) },
+        { key: 'port', weight: 5, pass: hasText(item?.port) },
+        { key: 'deadline', weight: 5, pass: hasText(item?.deadline) },
+        { key: 'message', weight: 18, pass: messageLength >= 10 }
+    ];
+    const maxScore = rules.reduce((sum, rule) => sum + rule.weight, 0);
+    let score = 0;
+    for (const rule of rules) {
+        if (rule.key === 'message') {
+            if (messageLength >= 30) {
+                score += rule.weight;
+            } else if (messageLength >= 10) {
+                score += 10;
+            }
+            continue;
+        }
+        if (rule.pass) {
+            score += rule.weight;
+        }
+    }
+    const percent = Math.round((score / maxScore) * 100);
+    const level = percent >= 85 ? 'high' : percent >= 70 ? 'medium' : 'low';
+    const missingFields = rules
+        .filter((rule) => (rule.key === 'message' ? messageLength < 10 : !rule.pass))
+        .map((rule) => rule.key);
+    return { score, maxScore, percent, level, missingFields };
+}
+
+function getRfqCompleteness(item) {
+    if (item?.rfqCompleteness && Number.isFinite(Number(item.rfqCompleteness.percent))) {
+        return item.rfqCompleteness;
+    }
+    return computeRfqCompleteness(item);
+}
+
+function getRfqLevelLabel(level) {
+    if (level === 'high') return '高';
+    if (level === 'medium') return '中';
+    return '低';
+}
+
+function getPriorityLabel(priority) {
+    if (priority === 'high') return '高';
+    if (priority === 'medium') return '中';
+    return '低';
+}
+
+function getPriorityClass(priority) {
+    if (priority === 'high') return 'priority-high';
+    if (priority === 'medium') return 'priority-medium';
+    return 'priority-low';
+}
+
+function getInquiryPriority(item) {
+    if (item?.priority) return item.priority;
+    return getRfqCompleteness(item).level;
+}
+
+function getInquirySla(item) {
+    if (item?.sla && typeof item.sla.breached !== 'undefined') {
+        return item.sla;
+    }
+    const status = String(item?.status || '');
+    const isTerminal = status === 'won' || status === 'lost';
+    if (isTerminal) return { breached: false, overdueHours: 0, thresholdHours: 24 };
+    const anchorTs = new Date(item?.updatedAt || item?.createdAt || Date.now()).getTime();
+    const elapsedHours = Math.max(0, (Date.now() - anchorTs) / (1000 * 60 * 60));
+    return {
+        breached: elapsedHours > 24,
+        overdueHours: Math.max(0, Math.floor(elapsedHours - 24)),
+        thresholdHours: 24
+    };
+}
+
+function buildReminderMessage(item) {
+    const rfq = getRfqCompleteness(item);
+    const buyer = item?.contact?.name || '您好';
+    if (!Array.isArray(rfq.missingFields) || rfq.missingFields.length === 0) {
+        return `${buyer}，您好！当前询盘信息已经很完整，我们可直接进入报价与打样安排。若您有目标上架时间或包装细节更新，也欢迎补充。`;
+    }
+    const missingText = rfq.missingFields
+        .map((field) => rfqFieldLabelMap[field] || field)
+        .join('、');
+    return `${buyer}，您好！为更快给您准确报价，请补充以下信息：${missingText}。收到后我们将在工作时间内优先处理并回复完整方案。`;
+}
+
 async function apiFetch(url, options = {}) {
     const token = getToken();
     const headers = {
@@ -137,12 +268,16 @@ function updatePageControls() {
 
 function renderRows(items) {
     if (!Array.isArray(items) || items.length === 0) {
-        inquiryRows.innerHTML = '<tr><td colspan="7">暂无询盘记录</td></tr>';
+        inquiryRows.innerHTML = '<tr><td colspan="10">暂无询盘记录</td></tr>';
         summaryText.textContent = `当前 0 条（总计 ${totalItems} 条）`;
         return;
     }
     summaryText.textContent = `本页 ${items.length} 条（总计 ${totalItems} 条）`;
-    inquiryRows.innerHTML = items.map((item) => `
+    inquiryRows.innerHTML = items.map((item) => {
+        const rfq = getRfqCompleteness(item);
+        const priority = getInquiryPriority(item);
+        const sla = getInquirySla(item);
+        return `
         <tr>
             <td>${new Date(item.createdAt).toLocaleString()}</td>
             <td><span class="status-pill">${getStatusLabel(item.status)}</span></td>
@@ -150,6 +285,9 @@ function renderRows(items) {
             <td>${escapeHtml(item.contact?.email || '')}</td>
             <td>${escapeHtml(item.contact?.country || '')}</td>
             <td>${escapeHtml(getProductLabel(item.product))}</td>
+            <td><span class="score-pill score-${escapeHtml(rfq.level || 'low')}">${escapeHtml(String(rfq.percent || 0))}% · ${getRfqLevelLabel(rfq.level)}</span></td>
+            <td><span class="priority-pill ${getPriorityClass(priority)}">${getPriorityLabel(priority)}</span></td>
+            <td><span class="sla-pill ${sla.breached ? 'sla-breached' : 'sla-ok'}">${sla.breached ? `超时 ${sla.overdueHours}h` : '正常'}</span></td>
             <td>
                 <div class="row-actions">
                     <select data-role="row-status" data-id="${item.id}">
@@ -164,7 +302,8 @@ function renderRows(items) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function renderTimeline(item) {
@@ -195,12 +334,29 @@ function fillAssigneeOptions() {
 function setSelectedInquiry(item) {
     if (!item) {
         selectedInquiryId = '';
+        selectedInquiry = null;
         detailsPanel.classList.add('hidden');
         return;
     }
     selectedInquiryId = item.id;
+    selectedInquiry = item;
     detailsPanel.classList.remove('hidden');
+    const rfq = getRfqCompleteness(item);
+    const priority = getInquiryPriority(item);
+    const sla = getInquirySla(item);
     detailMeta.textContent = `#${item.id} · ${item.contact?.name || '-'} · ${item.contact?.email || '-'} · ${item.contact?.country || '-'} · 负责人：${getUserName(item.assigneeId)}`;
+    rfqScoreText.textContent = `RFQ完整度：${rfq.percent || 0}%（${rfq.score || 0}/${rfq.maxScore || 100}，等级：${getRfqLevelLabel(rfq.level)}）`;
+    priorityText.textContent = `优先级：${getPriorityLabel(priority)}（规则：高分询盘优先分配）`;
+    slaText.textContent = sla.breached
+        ? `SLA状态：已超时 ${sla.overdueHours} 小时（阈值 24h）`
+        : 'SLA状态：正常（24h内有更新）';
+    if (Array.isArray(rfq.missingFields) && rfq.missingFields.length > 0) {
+        rfqMissingList.innerHTML = rfq.missingFields
+            .map((field) => `<li>待补充：${escapeHtml(rfqFieldLabelMap[field] || field)}</li>`)
+            .join('');
+    } else {
+        rfqMissingList.innerHTML = '<li>关键字段完整，可优先跟进报价。</li>';
+    }
     detailMessage.textContent = item.message || '';
     detailStatusSelect.value = item.status || 'new';
     detailAssigneeSelect.value = item.assigneeId || '';
@@ -212,6 +368,7 @@ function setSelectedInquiry(item) {
     quoteIncotermInput.value = '';
     quoteValidityInput.value = '30';
     quoteNoteInput.value = '';
+    reminderPreview.value = '';
 }
 
 function buildQueryFromFilters() {
@@ -220,6 +377,10 @@ function buildQueryFromFilters() {
     if (countryFilter.value.trim()) params.set('country', countryFilter.value.trim());
     if (productFilter.value.trim()) params.set('product', productFilter.value.trim());
     if (keywordFilter.value.trim()) params.set('q', keywordFilter.value.trim());
+    if (rfqLevelFilter.value) params.set('rfqLevel', rfqLevelFilter.value);
+    if (priorityFilter.value) params.set('priority', priorityFilter.value);
+    if (slaFilter.value) params.set('sla', slaFilter.value);
+    if (sortBySelect.value) params.set('sort', sortBySelect.value);
     params.set('pageSize', String(pageSize));
     params.set('page', String(currentPage));
     return params;
@@ -249,15 +410,54 @@ function renderQuotes(quotes) {
 
 function updateKpis(summary) {
     const byStatus = summary?.byStatus || {};
+    const byPriority = summary?.byPriority || {};
     kpiTotal.textContent = String(summary?.total || 0);
     kpi7d.textContent = String(summary?.recent7d || 0);
     kpiQuoted.textContent = String(byStatus.quoted || 0);
     kpiWon.textContent = String(byStatus.won || 0);
+    kpiPriorityHigh.textContent = String(byPriority.high || 0);
+    kpiSlaBreached.textContent = String(summary?.slaBreachedOpen || 0);
+}
+
+function renderInsights(summary) {
+    const countries = Array.isArray(summary?.topCountries) ? summary.topCountries : [];
+    if (countries.length === 0) {
+        topCountriesList.innerHTML = '<li>暂无数据</li>';
+    } else {
+        topCountriesList.innerHTML = countries
+            .slice(0, 6)
+            .map((item) => `<li>${escapeHtml(item.country)}：${escapeHtml(String(item.count || 0))} 条</li>`)
+            .join('');
+    }
+
+    const highIntentPages = Array.isArray(summary?.highIntentPages) ? summary.highIntentPages : [];
+    if (highIntentPages.length === 0) {
+        highIntentPagesList.innerHTML = '<li>暂无高意向页面</li>';
+    } else {
+        highIntentPagesList.innerHTML = highIntentPages
+            .slice(0, 5)
+            .map((item) => `<li>${escapeHtml(item.page)}（询盘 ${escapeHtml(String(item.total || 0))} / 已报价 ${escapeHtml(String(item.quoted || 0))} / 已成交 ${escapeHtml(String(item.won || 0))}）</li>`)
+            .join('');
+    }
+
+    const topProducts = Array.isArray(summary?.topProducts) ? summary.topProducts : [];
+    const firstCountry = countries[0]?.country || '核心市场';
+    const firstProduct = topProducts[0]?.product || '主力品类';
+    const secondProduct = topProducts[1]?.product || firstProduct;
+    const thirdProduct = topProducts[2]?.product || firstProduct;
+    const plan = [
+        `Buyer Guide 1：${firstCountry} 采购商如何评估 ${firstProduct} 的 MOQ 与交期`,
+        `Buyer Guide 2：${secondProduct} OEM 打样到首柜出货流程与风险点`,
+        `Buyer Guide 3：${thirdProduct} 报价模板（Incoterm、有效期、付款条款）`
+    ];
+    nextWeekPlanList.innerHTML = plan.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
 }
 
 async function loadDashboardSummary() {
     const result = await apiFetch(`${adminApiBase}/dashboard/summary`);
-    updateKpis(result.item || {});
+    const summary = result.item || {};
+    updateKpis(summary);
+    renderInsights(summary);
 }
 
 async function loadSettings() {
@@ -296,7 +496,7 @@ async function loadInquiries() {
         }
         await loadDashboardSummary();
     } catch (error) {
-        inquiryRows.innerHTML = `<tr><td colspan="7">${error.message}</td></tr>`;
+        inquiryRows.innerHTML = `<tr><td colspan="10">${error.message}</td></tr>`;
         summaryText.textContent = '加载失败';
     }
 }
@@ -402,6 +602,10 @@ clearFilterBtn?.addEventListener('click', async () => {
     countryFilter.value = '';
     productFilter.value = '';
     keywordFilter.value = '';
+    rfqLevelFilter.value = '';
+    priorityFilter.value = '';
+    slaFilter.value = '';
+    sortBySelect.value = 'created_desc';
     currentPage = 1;
     await loadInquiries();
 });
@@ -425,6 +629,13 @@ logoutBtn?.addEventListener('click', () => {
     inquiryRows.innerHTML = '';
     detailsPanel.classList.add('hidden');
     selectedInquiryId = '';
+    selectedInquiry = null;
+    reminderPreview.value = '';
+    priorityText.textContent = '';
+    slaText.textContent = '';
+    topCountriesList.innerHTML = '';
+    highIntentPagesList.innerHTML = '';
+    nextWeekPlanList.innerHTML = '';
     users = [];
     currentUser = null;
 });
@@ -496,6 +707,30 @@ createQuoteBtn?.addEventListener('click', async () => {
         alert(error.message);
     } finally {
         createQuoteBtn.disabled = false;
+    }
+});
+
+buildReminderBtn?.addEventListener('click', () => {
+    if (!selectedInquiry) {
+        alert('请先打开一条询盘详情。');
+        return;
+    }
+    reminderPreview.value = buildReminderMessage(selectedInquiry);
+});
+
+copyReminderBtn?.addEventListener('click', async () => {
+    const text = reminderPreview.value.trim();
+    if (!text) {
+        alert('请先生成提醒文案。');
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(text);
+        alert('提醒文案已复制。');
+    } catch (error) {
+        reminderPreview.focus();
+        reminderPreview.select();
+        alert('自动复制失败，已选中文案，请手动复制。');
     }
 });
 
