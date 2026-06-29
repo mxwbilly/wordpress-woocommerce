@@ -1,0 +1,13 @@
+.env
+.env.prod
+
+wp-content/uploads/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/backup*/
+wp-content/debug.log
+
+*.sql
+*.sql.gz
+*.tar
+*.tar.gz

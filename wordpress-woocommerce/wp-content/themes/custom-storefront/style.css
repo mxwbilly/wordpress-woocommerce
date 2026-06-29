@@ -1,0 +1,62 @@
+/*
+Theme Name: Custom Storefront
+Theme URI: https://example.com/
+Author: Independent Website
+Author URI: https://example.com/
+Description: Minimal WooCommerce-ready theme scaffold for the independent store.
+Version: 0.1.0
+Requires at least: 6.0
+Requires PHP: 8.1
+License: GNU General Public License v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: custom-storefront
+*/
+
+:root {
+  --store-text: #202124;
+  --store-muted: #5f6368;
+  --store-border: #d8dee4;
+  --store-accent: #1f7a5c;
+  --store-surface: #ffffff;
+  --store-background: #f7f8f8;
+}
+
+body {
+  margin: 0;
+  background: var(--store-background);
+  color: var(--store-text);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--store-accent);
+}
+
+.site,
+.woocommerce {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.button,
+button,
+input[type="submit"],
+.woocommerce a.button,
+.woocommerce button.button {
+  border: 0;
+  border-radius: 4px;
+  background: var(--store-accent);
+  color: #ffffff;
+  cursor: pointer;
+  padding: 10px 14px;
+}
+
+.woocommerce ul.products li.product,
+.woocommerce-page ul.products li.product {
+  background: var(--store-surface);
+  border: 1px solid var(--store-border);
+  border-radius: 6px;
+  padding: 16px;
+}
