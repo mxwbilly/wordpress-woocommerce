@@ -31,8 +31,8 @@ services:
         define('WP_HOME', 'https://${DOMAIN}');
         define('WP_SITEURL', 'https://${DOMAIN}');
         define('FORCE_SSL_ADMIN', true);
-        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
-            $_SERVER['HTTPS'] = 'on';
+        if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+            $$_SERVER['HTTPS'] = 'on';
         }
     volumes:
       - wordpress_data:/var/www/html

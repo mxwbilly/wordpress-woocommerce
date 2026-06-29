@@ -1,3 +1,0 @@
-﻿# Enforce LF for HTML files
-*.html text eol=lf
-* text=auto
